@@ -7,6 +7,7 @@ import { errorHandler } from "./presentation/middleware/error-handler";
 import authRoutes from "./presentation/routes/auth";
 import categoryRoutes from "./presentation/routes/categories";
 import productRoutes from "./presentation/routes/products";
+import cartRoutes from "./presentation/routes/cart";
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.get("/health", (_req, res) => {
 app.use("/auth", authRoutes);
 app.use("/categories", categoryRoutes);
 app.use("/products", productRoutes);
+app.use("/cart", cartRoutes);
 
 app.use(errorHandler);
 
