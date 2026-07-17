@@ -6,6 +6,7 @@ import { env } from "./config/env";
 import { errorHandler } from "./presentation/middleware/error-handler";
 import authRoutes from "./presentation/routes/auth";
 import categoryRoutes from "./presentation/routes/categories";
+import productRoutes from "./presentation/routes/products";
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.get("/health", (_req, res) => {
 
 app.use("/auth", authRoutes);
 app.use("/categories", categoryRoutes);
+app.use("/products", productRoutes);
 
 app.use(errorHandler);
 
