@@ -29,6 +29,17 @@ cd backend
 # No commands yet — package is empty
 ```
 
+## Workflow Rules
+
+After every code edit, always run:
+
+```bash
+cd frontend && npm run lint    # ESLint (and unit tests when test runner is set up)
+cd backend && npm run test     # Unit tests (when test runner is set up)
+```
+
+If lint or tests fail, fix before moving on.
+
 ## Architecture Rules (from PLAN.md)
 
 When building backend, enforce these constraints:
