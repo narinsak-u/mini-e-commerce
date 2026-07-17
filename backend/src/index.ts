@@ -8,6 +8,8 @@ import authRoutes from "./presentation/routes/auth";
 import categoryRoutes from "./presentation/routes/categories";
 import productRoutes from "./presentation/routes/products";
 import cartRoutes from "./presentation/routes/cart";
+import checkoutRoutes from "./presentation/routes/checkout";
+import orderRoutes from "./presentation/routes/orders";
 
 const app = express();
 
@@ -24,6 +26,8 @@ app.use("/auth", authRoutes);
 app.use("/categories", categoryRoutes);
 app.use("/products", productRoutes);
 app.use("/cart", cartRoutes);
+app.use("/checkout", checkoutRoutes);
+app.use("/orders", orderRoutes);
 
 app.use(errorHandler);
 

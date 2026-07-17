@@ -12,6 +12,11 @@ export async function getRabbitChannel(): Promise<amqp.Channel> {
   return channel;
 }
 
+export async function publishEvent(routingKey: string, payload: unknown): Promise<void> {
+  const ch = await getRabbitChannel();
+  ch.publish("shop.exchange", routingKey, Buffer.from(JSON.stringify(payload)), { persistent: true });
+}
+
 export async function closeRabbit(): Promise<void> {
   await channel?.close();
   await connection?.close();
