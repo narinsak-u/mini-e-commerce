@@ -1,5 +1,6 @@
 /** Auth router: wires use cases and controller into Express routes. */
 import { Router } from "express";
+import { rateLimiter } from "../../infrastructure/redis/rate-limiter";
 import { createDrizzleUserRepo } from "../../infrastructure/database/repositories/drizzle-user-repo";
 import { createJwtService } from "../../infrastructure/auth/jwt-service";
 import { createPasswordHasher } from "../../infrastructure/auth/password-hasher";
@@ -20,10 +21,13 @@ const logout = logoutUser();
 
 const authController = createAuthController(register, login, refresh, logout);
 
+const loginLimiter = rateLimiter(60, 100);
+const registerLimiter = rateLimiter(60, 100);
+
 const router = Router();
 
-router.post("/register", authController.register);
-router.post("/login", authController.login);
+router.post("/register", registerLimiter, authController.register);
+router.post("/login", loginLimiter, authController.login);
 router.post("/refresh", authController.refresh);
 router.post("/logout", authController.logout);
 
