@@ -4,6 +4,7 @@ import helmet from "helmet";
 import compression from "compression";
 import { env } from "./config/env";
 import { errorHandler } from "./presentation/middleware/error-handler";
+import authRoutes from "./presentation/routes/auth";
 
 const app = express();
 
@@ -15,6 +16,8 @@ app.use(express.json());
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
+
+app.use("/auth", authRoutes);
 
 app.use(errorHandler);
 
