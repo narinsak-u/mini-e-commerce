@@ -54,3 +54,12 @@ export function updateProduct(product: Product, props: {
     updatedAt: new Date(),
   };
 }
+
+export function reduceStock(product: Product, quantity: number): Product | null {
+  if (product.stock < quantity) return null;
+  return { ...product, stock: product.stock - quantity, updatedAt: new Date() };
+}
+
+export function releaseStock(product: Product, quantity: number): Product {
+  return { ...product, stock: product.stock + quantity, updatedAt: new Date() };
+}

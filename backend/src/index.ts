@@ -10,6 +10,8 @@ import productRoutes from "./presentation/routes/products";
 import cartRoutes from "./presentation/routes/cart";
 import checkoutRoutes from "./presentation/routes/checkout";
 import orderRoutes from "./presentation/routes/orders";
+import notificationRoutes from "./presentation/routes/notifications";
+import { startWorkers } from "./infrastructure/workers";
 
 const app = express();
 
@@ -28,11 +30,13 @@ app.use("/products", productRoutes);
 app.use("/cart", cartRoutes);
 app.use("/checkout", checkoutRoutes);
 app.use("/orders", orderRoutes);
+app.use("/notifications", notificationRoutes);
 
 app.use(errorHandler);
 
 app.listen(env.port, () => {
   console.log(`Server running on port ${env.port}`);
+  startWorkers().catch(console.error);
 });
 
 export default app;
