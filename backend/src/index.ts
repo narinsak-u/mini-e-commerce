@@ -5,6 +5,7 @@ import compression from "compression";
 import { env } from "./config/env";
 import { errorHandler } from "./presentation/middleware/error-handler";
 import authRoutes from "./presentation/routes/auth";
+import categoryRoutes from "./presentation/routes/categories";
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/auth", authRoutes);
+app.use("/categories", categoryRoutes);
 
 app.use(errorHandler);
 
