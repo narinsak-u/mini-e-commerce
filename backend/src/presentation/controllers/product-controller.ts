@@ -5,7 +5,7 @@ import { updateProductUseCase } from "../../application/products/use-cases/updat
 import { deleteProductUseCase } from "../../application/products/use-cases/delete-product";
 import { getProductUseCase } from "../../application/products/use-cases/get-product";
 import { listProductsUseCase } from "../../application/products/use-cases/list-products";
-import { createCacheService } from "../../infrastructure/redis/cache-service";
+import { cacheService } from "../../infrastructure/redis/cache-service";
 import { ValidationError } from "../../shared/errors/app-error";
 
 export function createProductController(
@@ -15,7 +15,7 @@ export function createProductController(
   update: ReturnType<typeof updateProductUseCase>,
   del: ReturnType<typeof deleteProductUseCase>,
 ) {
-  const cache = createCacheService();
+  const cache = cacheService;
   const PRODUCT_CACHE_TTL = 300;
 
   return {

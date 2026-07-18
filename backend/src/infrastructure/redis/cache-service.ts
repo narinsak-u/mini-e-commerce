@@ -7,7 +7,7 @@ export interface CacheService {
   delPattern(pattern: string): Promise<void>;
 }
 
-export function createCacheService(): CacheService {
+function createCacheService(): CacheService {
   return {
     async get<T>(key: string): Promise<T | null> {
       const data = await redis.get(key);
@@ -26,3 +26,8 @@ export function createCacheService(): CacheService {
     },
   };
 }
+
+export { createCacheService };
+
+/** Singleton cache service instance shared across the app. */
+export const cacheService: CacheService = createCacheService();

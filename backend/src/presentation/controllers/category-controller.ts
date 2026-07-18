@@ -4,7 +4,7 @@ import { createCategoryUseCase } from "../../application/categories/use-cases/cr
 import { updateCategoryUseCase } from "../../application/categories/use-cases/update-category";
 import { deleteCategoryUseCase } from "../../application/categories/use-cases/delete-category";
 import { listCategoriesUseCase } from "../../application/categories/use-cases/list-categories";
-import { createCacheService } from "../../infrastructure/redis/cache-service";
+import { cacheService } from "../../infrastructure/redis/cache-service";
 import { ValidationError } from "../../shared/errors/app-error";
 
 export interface CategoryController {
@@ -20,7 +20,7 @@ export function createCategoryController(
   update: ReturnType<typeof updateCategoryUseCase>,
   del: ReturnType<typeof deleteCategoryUseCase>,
 ): CategoryController {
-  const cache = createCacheService();
+  const cache = cacheService;
   const CACHE_KEY = "categories:all";
   const CACHE_TTL = 600;
 
