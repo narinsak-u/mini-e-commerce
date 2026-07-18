@@ -1,13 +1,18 @@
-import { getRabbitChannel } from "../../config/rabbitmq";
+import { getRabbitChannel, publishEvent } from "../../config/rabbitmq";
 import { createDrizzleProductRepo } from "../database/repositories/drizzle-product-repo";
 import { createDrizzleInventoryRepo } from "../database/repositories/drizzle-inventory-repo";
 import { createDrizzleOrderRepo } from "../database/repositories/drizzle-order-repo";
 import { createDrizzlePaymentRepo } from "../database/repositories/drizzle-payment-repo";
 import { createDrizzleNotificationRepo } from "../database/repositories/drizzle-notification-repo";
 import { createAnalyticsStore } from "../redis/analytics-store";
+import { reserveStockUseCase } from "../../application/inventory/use-cases/reserve-stock";
+import { releaseStockUseCase } from "../../application/inventory/use-cases/release-stock";
+import { processPaymentUseCase } from "../../application/payments/use-cases/process-payment";
+import { trackPaymentUseCase } from "../../application/analytics/use-cases/track-payment";
 
 export async function startWorkers(): Promise<void> {
   const channel = await getRabbitChannel();
+
   const productRepo = createDrizzleProductRepo();
   const inventoryRepo = createDrizzleInventoryRepo();
   const orderRepo = createDrizzleOrderRepo();
@@ -15,19 +20,19 @@ export async function startWorkers(): Promise<void> {
   const notificationRepo = createDrizzleNotificationRepo();
   const analytics = createAnalyticsStore();
 
+  const reserveStock = reserveStockUseCase(productRepo, inventoryRepo);
+  const releaseStock = releaseStockUseCase(productRepo, inventoryRepo);
+  const processPayment = processPaymentUseCase(orderRepo, paymentRepo);
+  const trackPayment = trackPaymentUseCase(analytics);
+
+  // ── Inventory Worker ──────────────────────────────────────────────
   await channel.assertQueue("inventory.updated", { durable: true });
   await channel.bindQueue("inventory.updated", "shop.exchange", "order.created");
   await channel.consume("inventory.updated", async (msg) => {
     if (!msg) return;
     try {
       const { orderId, items } = JSON.parse(msg.content.toString());
-      for (const item of items) {
-        const product = await productRepo.findById(item.productId);
-        if (!product || product.stock < item.quantity) throw new Error(`Insufficient stock for ${item.productId}`);
-        await productRepo.update({ ...product, stock: product.stock - item.quantity, updatedAt: new Date() });
-        const log = { id: crypto.randomUUID(), productId: item.productId, orderId, quantityChange: -item.quantity, type: "reserve" as const, createdAt: new Date() };
-        await inventoryRepo.save(log);
-      }
+      await reserveStock({ orderId, items });
       channel.publish("shop.exchange", "inventory.reserved", Buffer.from(JSON.stringify({ orderId })), { persistent: true });
       channel.ack(msg);
     } catch (err) {
@@ -36,6 +41,7 @@ export async function startWorkers(): Promise<void> {
     }
   });
 
+  // ── Payment Worker ────────────────────────────────────────────────
   await channel.assertQueue("payment.request", { durable: true });
   await channel.bindQueue("payment.request", "shop.exchange", "inventory.reserved");
   await channel.consume("payment.request", async (msg) => {
@@ -44,21 +50,15 @@ export async function startWorkers(): Promise<void> {
       const { orderId } = JSON.parse(msg.content.toString());
       const order = await orderRepo.findById(orderId);
       if (!order) throw new Error(`Order ${orderId} not found`);
-      const payment = { id: crypto.randomUUID(), orderId, amount: order.totalAmount, status: "pending" as const, paidAt: null, createdAt: new Date() };
-      await paymentRepo.save(payment);
-      await new Promise(resolve => setTimeout(resolve, 100));
-      const success = Math.random() > 0.1;
-      if (success) {
-        await paymentRepo.updateStatus(payment.id, "success", new Date());
-        await orderRepo.updateStatus(orderId, "paid");
-        channel.publish("shop.exchange", "payment.completed", Buffer.from(JSON.stringify({ orderId, amount: order.totalAmount })), { persistent: true });
-        await analytics.incrementRevenue(order.totalAmount);
-        await analytics.incrementOrders();
-        for (const item of order.items) await analytics.incrementBestSeller(item.productId, item.quantity);
-        await analytics.recordDailyRevenue(order.totalAmount);
+
+      const result = await processPayment({ orderId });
+
+      if (result.success) {
+        channel.publish("shop.exchange", "payment.completed", Buffer.from(JSON.stringify({ orderId, amount: result.amount })), { persistent: true });
+        await trackPayment({ orderId, amount: result.amount!, items: order.items.map(i => ({ productId: i.productId, quantity: i.quantity })) });
       } else {
-        await paymentRepo.updateStatus(payment.id, "failed");
         channel.publish("shop.exchange", "payment.failed", Buffer.from(JSON.stringify({ orderId })), { persistent: true });
+        await releaseStock({ orderId, items: order.items.map(i => ({ productId: i.productId, quantity: i.quantity })) });
       }
       channel.ack(msg);
     } catch (err) {
@@ -67,6 +67,7 @@ export async function startWorkers(): Promise<void> {
     }
   });
 
+  // ── Notification Worker ───────────────────────────────────────────
   await channel.assertQueue("notification.send", { durable: true });
   for (const key of ["payment.completed", "inventory.failed", "order.shipped", "order.completed"]) {
     await channel.bindQueue("notification.send", "shop.exchange", key);
@@ -77,13 +78,39 @@ export async function startWorkers(): Promise<void> {
       const event = JSON.parse(msg.content.toString());
       const order = await orderRepo.findById(event.orderId);
       if (order) {
-        const notif = { id: crypto.randomUUID(), userId: order.userId, type: "payment_success" as const, title: "Payment Successful", body: `Your payment of $${order.totalAmount} was successful.`, read: false, createdAt: new Date() };
+        const notif = {
+          id: crypto.randomUUID(),
+          userId: order.userId,
+          type: "payment_success" as const,
+          title: "Payment Successful",
+          body: `Your payment of $${order.totalAmount} was successful.`,
+          read: false,
+          createdAt: new Date(),
+        };
         await notificationRepo.save(notif);
-        console.log(`Email notification sent to user ${order.userId}: Payment successful`);
+        console.log(`Notification sent to user ${order.userId}: Payment successful`);
       }
       channel.ack(msg);
     } catch (err) {
       console.error("Notification worker error:", err);
+      channel.nack(msg, false, false);
+    }
+  });
+
+  // ── Analytics Worker ──────────────────────────────────────────────
+  await channel.assertQueue("analytics", { durable: true });
+  await channel.bindQueue("analytics", "shop.exchange", "payment.completed");
+  await channel.consume("analytics", async (msg) => {
+    if (!msg) return;
+    try {
+      const { orderId, amount } = JSON.parse(msg.content.toString());
+      const order = await orderRepo.findById(orderId);
+      if (order) {
+        await trackPayment({ orderId, amount, items: order.items.map(i => ({ productId: i.productId, quantity: i.quantity })) });
+      }
+      channel.ack(msg);
+    } catch (err) {
+      console.error("Analytics worker error:", err);
       channel.nack(msg, false, false);
     }
   });
