@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,7 @@ export function LoginForm() {
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>{loading ? "Logging in..." : "Login"}</Button>
-          <p className="text-sm text-center text-muted-foreground">Don&apos;t have an account? <a href="/auth/register" className="text-primary underline">Register</a></p>
+          <p className="text-sm text-center text-muted-foreground">Don&apos;t have an account? <Link href="/auth/register" className="text-primary underline">Register</Link></p>
         </form>
       </CardContent>
     </Card>

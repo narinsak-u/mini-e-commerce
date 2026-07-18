@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { api } from "@/lib/api";
 import { notFound } from "next/navigation";
 import { AddToCartButton } from "@/components/add-to-cart-button";
@@ -14,7 +15,7 @@ export default async function ProductDetailPage({ params: paramsPromise }: { par
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="grid md:grid-cols-2 gap-12">
         <div className="aspect-square bg-muted rounded-lg flex items-center justify-center text-6xl text-muted-foreground">
-          {product.imageUrl ? <img src={product.imageUrl} alt={product.name} className="object-cover w-full h-full rounded-lg" /> : "📦"}
+          {product.imageUrl ? <Image src={product.imageUrl} alt={product.name} width={600} height={600} className="object-cover w-full h-full rounded-lg" /> : "📦"}
         </div>
         <div>
           <h1 className="text-3xl font-bold mb-2">{product.name}</h1>

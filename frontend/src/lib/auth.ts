@@ -5,8 +5,8 @@ export interface Session {
   role: string;
 }
 
-export function getSession(): Session | null {
-  const token = cookies().get("token")?.value;
+export async function getSession(): Promise<Session | null> {
+  const token = (await cookies()).get("token")?.value;
   if (!token) return null;
   try {
     const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());
@@ -17,6 +17,6 @@ export function getSession(): Session | null {
   }
 }
 
-export function isAdmin(): boolean {
-  return getSession()?.role === "admin";
+export async function isAdmin(): Promise<boolean> {
+  return (await getSession())?.role === "admin";
 }

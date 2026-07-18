@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { api } from "@/lib/api";
 import { ProductGrid } from "@/components/product-grid";
 import { ProductSearch } from "@/components/product-search";
@@ -23,7 +24,9 @@ export default async function ProductsPage({ searchParams: searchParamsPromise }
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Products</h1>
-      <ProductSearch categories={categories.data} />
+      <Suspense fallback={<div className="h-[40px]" />}>
+        <ProductSearch categories={categories.data} />
+      </Suspense>
       <ProductGrid products={productsRes.data} />
     </div>
   );

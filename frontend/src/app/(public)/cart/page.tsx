@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,6 @@ interface Cart { items: CartItem[]; total: number }
 export default function CartPage() {
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     api<Cart>("/cart").then(setCart).catch(() => setCart({ items: [], total: 0 })).finally(() => setLoading(false));

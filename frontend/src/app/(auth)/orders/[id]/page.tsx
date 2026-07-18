@@ -10,10 +10,11 @@ interface Order { id: string; status: string; totalAmount: number; createdAt: st
 
 export default async function OrderDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const { id } = await paramsPromise;
-  const session = await getSession();
+  const [session, order] = await Promise.all([
+    getSession(),
+    api<Order>(`/orders/${id}`).catch(() => { notFound(); }),
+  ]);
   if (!session) redirect("/auth/login");
-  let order: Order;
-  try { order = await api<Order>(`/orders/${id}`); } catch { notFound(); }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -23,7 +24,7 @@ export default async function OrderDetailPage({ params: paramsPromise }: { param
         <CardHeader><CardTitle>Items</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           {order.items.map((item, i) => (
-            <div key={i}>
+            <div key={`${item.productName}-${i}`}>
               <div className="flex justify-between"><span>{item.productName} × {item.quantity}</span><span>${Number(item.subtotal).toFixed(2)}</span></div>
               <Separator />
             </div>

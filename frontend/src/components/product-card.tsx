@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,7 @@ export function ProductCard({ id, name, price, imageUrl, category }: ProductCard
     <Link href={`/products/${id}`}>
       <Card className="overflow-hidden transition-shadow hover:shadow-md">
         <div className="aspect-square bg-muted flex items-center justify-center text-muted-foreground">
-          {imageUrl ? <img src={imageUrl} alt={name} className="object-cover w-full h-full" /> : <span className="text-4xl">📦</span>}
+          {imageUrl ? <Image src={imageUrl} alt={name} width={400} height={400} className="object-cover w-full h-full" /> : <span className="text-4xl">📦</span>}
         </div>
         <CardContent className="p-4">
           <h3 className="font-medium truncate">{name}</h3>

@@ -18,8 +18,8 @@ export default function CheckoutPage() {
   const router = useRouter();
 
   useEffect(() => {
-    api<Cart>("/cart").then(setCart).catch(() => router.push("/cart"));
-  }, [router]);
+    api<Cart>("/cart").then(setCart).catch(() => setCart({ items: [], total: 0 }));
+  }, []);
 
   async function handleCheckout() {
     setLoading(true);

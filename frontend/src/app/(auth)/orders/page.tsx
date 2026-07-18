@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -24,7 +25,7 @@ export default async function OrdersPage() {
       ) : (
         <div className="space-y-4">
           {orders.map((order) => (
-            <a key={order.id} href={`/orders/${order.id}`}>
+            <Link key={order.id} href={`/orders/${order.id}`}>
               <Card className="transition-shadow hover:shadow-md">
                 <CardContent className="flex items-center justify-between py-4">
                   <div>
@@ -34,7 +35,7 @@ export default async function OrdersPage() {
                   <Badge variant={order.status === "completed" || order.status === "paid" ? "default" : "secondary"}>{order.status}</Badge>
                 </CardContent>
               </Card>
-            </a>
+            </Link>
           ))}
         </div>
       )}
