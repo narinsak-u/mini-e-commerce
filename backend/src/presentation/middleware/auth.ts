@@ -12,7 +12,7 @@ declare module "express-serve-static-core" {
 
 export function authMiddleware(req: Request, _res: Response, next: NextFunction): void {
   const header = req.headers.authorization;
-  if (!header?.startsWith("Bearer ")) throw new UnauthorizedError("Missing or invalid token");
+  if (!header?.startsWith("Bearer ")) return next(new UnauthorizedError("Missing or invalid token"));
 
   const token = header.slice(7);
   try {
