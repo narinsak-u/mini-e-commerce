@@ -10,7 +10,6 @@ import { randomUUID } from "node:crypto";
 const testEmail = `test-${randomUUID()}@example.com`;
 const testPassword = "password123";
 const testName = "Test User";
-let accessToken = "";
 let refreshTokenValue = "";
 
 afterAll(async () => {
@@ -29,7 +28,6 @@ describe("Auth API", () => {
     expect(res.body.user.role).toBe("customer");
     expect(res.body.accessToken).toBeTruthy();
     expect(res.body.refreshToken).toBeTruthy();
-    accessToken = res.body.accessToken;
     refreshTokenValue = res.body.refreshToken;
   });
 

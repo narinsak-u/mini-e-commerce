@@ -3,14 +3,19 @@ import type { IProductRepository } from "../../../domain/products/repositories/p
 import type { IUserRepository } from "../../../domain/auth/repositories/user-repository";
 import { createAnalyticsStore } from "../../../infrastructure/redis/analytics-store";
 
-export function getDashboardUseCase(orderRepo: IOrderRepository, productRepo: IProductRepository, userRepo: IUserRepository) {
+export function getDashboardUseCase(
+  orderRepo: IOrderRepository,
+  productRepo: IProductRepository,
+  _userRepo: IUserRepository,
+) {
   return async () => {
     const analytics = createAnalyticsStore();
-    const [analyticsData, ordersResult, productsResult, usersResult] = await Promise.all([
+    const [analyticsData, ordersResult, productsResult] = await Promise.all([
       analytics.getAnalytics(),
       orderRepo.findAll(1, 5).catch(() => ({ data: [], total: 0 })),
-      productRepo.findMany({ page: 1, limit: 5 }).catch(() => ({ data: [], total: 0 })),
-      userRepo.findByEmail("").catch(() => null),
+      productRepo
+        .findMany({ page: 1, limit: 5 })
+        .catch(() => ({ data: [], total: 0 })),
     ]);
     return {
       revenue: analyticsData.revenue,
@@ -19,7 +24,7 @@ export function getDashboardUseCase(orderRepo: IOrderRepository, productRepo: IP
       dailyRevenue: analyticsData.dailyRevenue,
       recentOrders: ordersResult.data,
       totalProducts: analyticsData.totalOrders,
-      lowStockProducts: productsResult.data.filter(p => p.stock < 10),
+      lowStockProducts: productsResult.data.filter((p) => p.stock < 10),
     };
   };
 }

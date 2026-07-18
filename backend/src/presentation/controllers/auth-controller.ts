@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Request, Response } from "express";
 import { asyncHandler } from "../middleware/async-handler";
 import { registerUser } from "../../application/auth/use-cases/register";
 import { loginUser } from "../../application/auth/use-cases/login";
