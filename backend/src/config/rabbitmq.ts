@@ -6,12 +6,25 @@ let channel: amqp.Channel | null = null;
 
 const DLX = "shop.dlx";
 const DLQ = "shop.dead-letter";
+const MAIN_EXCHANGE = "shop.exchange";
 
-/** Ensures the dead-letter exchange and queue exist. */
-async function setupDeadLetterQueue(ch: amqp.Channel): Promise<void> {
+const QUEUES = [
+  "inventory.updated",
+  "payment.request",
+  "notification.send",
+  "analytics",
+] as const;
+
+async function setupInfrastructure(ch: amqp.Channel): Promise<void> {
+  await ch.assertExchange(MAIN_EXCHANGE, "topic", { durable: true });
   await ch.assertExchange(DLX, "fanout", { durable: true });
   await ch.assertQueue(DLQ, { durable: true });
   await ch.bindQueue(DLQ, DLX, "");
+  // Delete old queues first so we can assert with fresh DLX args
+  for (const q of QUEUES) {
+    await ch.deleteQueue(q).catch(() => {});
+    await ch.assertQueue(q, { durable: true, arguments: { "x-dead-letter-exchange": DLX } });
+  }
 }
 
 /** Queue options with dead-lettering via shop.dlx. */
@@ -23,14 +36,17 @@ export async function getRabbitChannel(): Promise<amqp.Channel> {
   if (channel) return channel;
   connection = await amqp.connect(env.rabbitmqUrl);
   channel = await connection.createChannel();
-  await channel.assertExchange("shop.exchange", "topic", { durable: true });
-  await setupDeadLetterQueue(channel);
+  await setupInfrastructure(channel);
   return channel;
 }
 
 export async function publishEvent(routingKey: string, payload: unknown): Promise<void> {
-  const ch = await getRabbitChannel();
-  ch.publish("shop.exchange", routingKey, Buffer.from(JSON.stringify(payload)), { persistent: true });
+  try {
+    const ch = await getRabbitChannel();
+    ch.publish(MAIN_EXCHANGE, routingKey, Buffer.from(JSON.stringify(payload)), { persistent: true });
+  } catch (err) {
+    console.error(`Failed to publish event ${routingKey}:`, err);
+  }
 }
 
 export async function closeRabbit(): Promise<void> {

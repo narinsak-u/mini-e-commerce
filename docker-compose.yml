@@ -25,6 +25,34 @@ services:
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
 
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: postgres://shopflow:shopflow@postgres:5432/shopflow
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      JWT_SECRET: change-me-in-production
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3000
+    depends_on:
+      - backend
+
 volumes:
   postgres-data:
   redis-data:

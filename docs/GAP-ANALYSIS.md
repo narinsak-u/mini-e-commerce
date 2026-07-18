@@ -137,17 +137,13 @@ The worker file mixes concerns: all logic is in one function (`startWorkers`), n
 | Backend: order cancellation endpoint | ✅ Done | 2025-07-18 |
 | Frontend: order cancellation button | ✅ Done | 2025-07-18 |
 | Frontend: admin order status update UI | ✅ Done | 2025-07-18 |
-| Missing tests | 🔴 Still missing | — |
-| Frontend Docker container | 🔴 Still missing | — |
+| Missing tests (inventory, payments, orders, notifications) | ✅ Done | 2025-07-18 |
+| Frontend Docker container | ✅ Done | 2025-07-18 |
+| Backend Docker compose service | ✅ Done | 2025-07-18 |
 
 ### Remaining gaps
 
-### 🟡 MEDIUM
-
-1. **Missing tests**: inventory, payments, notifications, orders, workers, RabbitMQ
-
 ### 🟢 LOW
 
-2. **No frontend Docker container**
-3. **Notification worker only handles `payment_success`** — missing order_shipped, delivered notifications
-4. **Frontend: no TanStack Query or Zustand** (works fine without for this size)
+1. **Notification worker only handles `payment_success`** — missing order_shipped, delivered notifications
+2. **Frontend: no TanStack Query or Zustand** (works fine without for this size)
