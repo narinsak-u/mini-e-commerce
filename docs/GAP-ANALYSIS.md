@@ -127,31 +127,27 @@ The worker file mixes concerns: all logic is in one function (`startWorkers`), n
 | Workers refactored to use use cases | ✅ Done | 2025-07-18 |
 | Analytics module (domain + use case) | ✅ Done | 2025-07-18 |
 | Analytics worker (dedicated consumer) | ✅ Done | 2025-07-18 |
-| Dead letter queue | 🔴 Still missing | — |
-| Redis session store | 🔴 Still missing | — |
-| Frontend: categories page | 🔴 Still missing | — |
-| Frontend: error boundaries | 🔴 Still missing | — |
-| Frontend admin CRUD forms | 🔴 Still missing | — |
+| Dead letter queue | ✅ Done | 2025-07-18 |
+| Redis session store | ✅ Done | 2025-07-18 |
+| Frontend: error boundary component | ✅ Done | 2025-07-18 |
+| Frontend: loading skeleton components | ✅ Done | 2025-07-18 |
+| Frontend: loading states (categories, products) | ✅ Done | 2025-07-18 |
+| Frontend: categories browse page | ✅ Done | 2025-07-18 |
+| Frontend admin CRUD forms (create/edit) | ✅ Done | 2025-07-18 |
+| Backend: order cancellation endpoint | ✅ Done | 2025-07-18 |
+| Frontend: order cancellation button | ✅ Done | 2025-07-18 |
+| Frontend: admin order status update UI | ✅ Done | 2025-07-18 |
 | Missing tests | 🔴 Still missing | — |
 | Frontend Docker container | 🔴 Still missing | — |
 
 ### Remaining gaps
 
-### 🔴 HIGH
-
-1. **Frontend: no error boundaries or loading states** on any page
-2. **No dead letter queue** — PLAN.md specifies for production hardening
-
 ### 🟡 MEDIUM
 
-3. **Missing tests**: inventory, payments, notifications, orders, workers, RabbitMQ
-4. **No session store in Redis** — PLAN.md specifies `session:user:15`
-5. **Frontend: no create/edit product forms** in admin
-6. **Frontend: no order cancellation UI**
-7. **Frontend: no categories browse page**
+1. **Missing tests**: inventory, payments, notifications, orders, workers, RabbitMQ
 
 ### 🟢 LOW
 
-8. **Frontend: no TanStack Query or Zustand** (works fine without for this size)
-9. **No frontend Docker container**
-10. **Notification worker only handles `payment_success`** — missing order_shipped, delivered notifications
+2. **No frontend Docker container**
+3. **Notification worker only handles `payment_success`** — missing order_shipped, delivered notifications
+4. **Frontend: no TanStack Query or Zustand** (works fine without for this size)

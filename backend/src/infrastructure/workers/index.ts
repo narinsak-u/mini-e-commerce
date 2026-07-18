@@ -1,4 +1,4 @@
-import { getRabbitChannel, publishEvent } from "../../config/rabbitmq";
+import { getRabbitChannel, dlqOptions, publishEvent } from "../../config/rabbitmq";
 import { createDrizzleProductRepo } from "../database/repositories/drizzle-product-repo";
 import { createDrizzleInventoryRepo } from "../database/repositories/drizzle-inventory-repo";
 import { createDrizzleOrderRepo } from "../database/repositories/drizzle-order-repo";
@@ -26,7 +26,7 @@ export async function startWorkers(): Promise<void> {
   const trackPayment = trackPaymentUseCase(analytics);
 
   // ── Inventory Worker ──────────────────────────────────────────────
-  await channel.assertQueue("inventory.updated", { durable: true });
+  await channel.assertQueue("inventory.updated", dlqOptions());
   await channel.bindQueue("inventory.updated", "shop.exchange", "order.created");
   await channel.consume("inventory.updated", async (msg) => {
     if (!msg) return;
@@ -42,7 +42,7 @@ export async function startWorkers(): Promise<void> {
   });
 
   // ── Payment Worker ────────────────────────────────────────────────
-  await channel.assertQueue("payment.request", { durable: true });
+  await channel.assertQueue("payment.request", dlqOptions());
   await channel.bindQueue("payment.request", "shop.exchange", "inventory.reserved");
   await channel.consume("payment.request", async (msg) => {
     if (!msg) return;
@@ -68,7 +68,7 @@ export async function startWorkers(): Promise<void> {
   });
 
   // ── Notification Worker ───────────────────────────────────────────
-  await channel.assertQueue("notification.send", { durable: true });
+  await channel.assertQueue("notification.send", dlqOptions());
   for (const key of ["payment.completed", "inventory.failed", "order.shipped", "order.completed"]) {
     await channel.bindQueue("notification.send", "shop.exchange", key);
   }
@@ -98,7 +98,7 @@ export async function startWorkers(): Promise<void> {
   });
 
   // ── Analytics Worker ──────────────────────────────────────────────
-  await channel.assertQueue("analytics", { durable: true });
+  await channel.assertQueue("analytics", dlqOptions());
   await channel.bindQueue("analytics", "shop.exchange", "payment.completed");
   await channel.consume("analytics", async (msg) => {
     if (!msg) return;

@@ -4,6 +4,7 @@ import { redirect, notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { CancelOrderButton } from "@/components/cancel-order-button";
 
 interface OrderItem { productName: string; quantity: number; productPrice: number; subtotal: number }
 interface Order { id: string; status: string; totalAmount: number; createdAt: string; items: OrderItem[] }
@@ -18,8 +19,13 @@ export default async function OrderDetailPage({ params: paramsPromise }: { param
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-2">Order #{order.id.slice(0, 8)}</h1>
-      <Badge className="mb-6">{order.status}</Badge>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Order #{order.id.slice(0, 8)}</h1>
+          <Badge className="mt-2">{order.status}</Badge>
+        </div>
+        {order.status === "pending" && <CancelOrderButton orderId={order.id} disabled={false} />}
+      </div>
       <Card>
         <CardHeader><CardTitle>Items</CardTitle></CardHeader>
         <CardContent className="space-y-4">

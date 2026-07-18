@@ -3,11 +3,13 @@ import { asyncHandler } from "../middleware/async-handler";
 import { getOrderUseCase } from "../../application/orders/use-cases/get-order";
 import { listUserOrdersUseCase } from "../../application/orders/use-cases/list-user-orders";
 import { updateOrderStatusUseCase } from "../../application/orders/use-cases/update-order-status";
+import { cancelOrderUseCase } from "../../application/orders/use-cases/cancel-order";
 
 export function createOrderController(
   get: ReturnType<typeof getOrderUseCase>,
   list: ReturnType<typeof listUserOrdersUseCase>,
   updateStatus: ReturnType<typeof updateOrderStatusUseCase>,
+  cancel: ReturnType<typeof cancelOrderUseCase>,
 ) {
   return {
     getById: asyncHandler(async (req: Request, res: Response) => {
@@ -18,6 +20,9 @@ export function createOrderController(
     }),
     updateStatus: asyncHandler(async (req: Request, res: Response) => {
       res.json(await updateStatus(req.params.id, req.body));
+    }),
+    cancelOrder: asyncHandler(async (req: Request, res: Response) => {
+      res.json(await cancel(req.params.id, req.user!.sub));
     }),
   };
 }
