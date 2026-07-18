@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { ZodError } from "zod";
 import { AppError } from "../../shared/errors/app-error";
 
 export function errorHandler(
@@ -7,6 +8,13 @@ export function errorHandler(
   res: Response,
   _next: NextFunction,
 ): void {
+  if (err instanceof ZodError) {
+    res.status(400).json({
+      error: { code: "VALIDATION_ERROR", message: err.errors.map(e => e.message).join(", ") },
+    });
+    return;
+  }
+
   if (err instanceof AppError) {
     res.status(err.statusCode).json({
       error: { code: err.code, message: err.message },

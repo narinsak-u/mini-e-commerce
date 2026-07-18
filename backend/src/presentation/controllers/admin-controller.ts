@@ -1,4 +1,5 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Request, Response } from "express";
+import { asyncHandler } from "../middleware/async-handler";
 import { getDashboardUseCase } from "../../application/admin/use-cases/get-dashboard";
 import { listUsersUseCase } from "../../application/admin/use-cases/list-users";
 import { updateUserRoleUseCase } from "../../application/admin/use-cases/update-user-role";
@@ -17,21 +18,17 @@ export function createAdminController() {
   const updateRole = updateUserRoleUseCase(userRepo);
 
   return {
-    async dashboard(req: Request, res: Response, next: NextFunction) {
-      try { res.json(await dashboard()); }
-      catch (err) { next(err); }
-    },
-    async analytics(req: Request, res: Response, next: NextFunction) {
-      try { res.json(await analytics.getAnalytics()); }
-      catch (err) { next(err); }
-    },
-    async users(req: Request, res: Response, next: NextFunction) {
-      try { res.json(await listUsers()); }
-      catch (err) { next(err); }
-    },
-    async updateUserRole(req: Request, res: Response, next: NextFunction) {
-      try { res.json(await updateRole(req.params.id, req.body)); }
-      catch (err) { next(err); }
-    },
+    dashboard: asyncHandler(async (_req: Request, res: Response) => {
+      res.json(await dashboard());
+    }),
+    analytics: asyncHandler(async (_req: Request, res: Response) => {
+      res.json(await analytics.getAnalytics());
+    }),
+    users: asyncHandler(async (_req: Request, res: Response) => {
+      res.json(await listUsers());
+    }),
+    updateUserRole: asyncHandler(async (req: Request, res: Response) => {
+      res.json(await updateRole(req.params.id, req.body));
+    }),
   };
 }
