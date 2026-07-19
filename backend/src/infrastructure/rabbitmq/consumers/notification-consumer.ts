@@ -4,6 +4,21 @@ import type { INotificationRepository } from "../../../domain/notifications/repo
 
 const EXCHANGE = "shop.exchange";
 
+/**
+ * Factory for the Notification consumer.
+ *
+ * **Workflow:**
+ * 1. Listens on `notification.send` queue bound to 4 routing keys:
+ *    `payment.completed`, `inventory.failed`, `order.shipped`, `order.completed`
+ * 2. On message: parses the event, fetches the order to get the user ID
+ * 3. Saves an in-app notification record to PostgreSQL
+ * 4. Logs a mock email notification to stdout
+ *
+ * **Current coverage:** handles `payment_success` type.
+ * Extend by switching on `event.type` for order_shipped, order_completed, etc.
+ *
+ * **Error handling:** nack without requeue → DLQ.
+ */
 export function createNotificationConsumer(
   channel: Channel,
   orderRepo: IOrderRepository,

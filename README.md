@@ -27,13 +27,6 @@ src/
 └── shared/          # Error classes, shared types
 ```
 
-Clean Architecture rules:
-- **Domain** has zero framework dependencies
-- **Application** coordinates business logic through use cases
-- **Infrastructure** implements interfaces defined in domain/application
-- **Presentation** handles HTTP concerns only
-- Dependencies flow inward: presentation → application → domain
-
 ## Modules
 
 Each module owns its own entity, repository interface, use cases, controller, and routes:
@@ -86,6 +79,37 @@ The server starts on `http://localhost:3000`.
 | PostgreSQL | 5432 | — |
 | Redis | 6379 | — |
 | RabbitMQ | 5672, 15672 | http://localhost:15672 (guest/guest) |
+
+## Clean Architecture Layers
+
+```
+src/
+├── domain/          # Entities, value objects, repository interfaces
+├── application/     # Use cases, DTOs, service interfaces  ──┐
+├── infrastructure/  # Database, Redis, RabbitMQ, auth        │ inward
+├── presentation/    # Express routes, controllers, middleware │ flow
+└── shared/          # Error classes, shared types            ──┘
+```
+
+Rules:
+- **Domain** has zero framework dependencies
+- **Application** calls domain interfaces, never infrastructure directly
+- **Infrastructure** implements interfaces defined in domain/application
+- **Presentation** handles HTTP concerns only
+- **Workers** (`infrastructure/rabbitmq/consumers/`) call application use cases, never repos directly
+
+## RabbitMQ Consumers
+
+Each consumer lives in its own file under `src/infrastructure/rabbitmq/consumers/`:
+
+| File | Queue | Bind Key | Purpose |
+|------|-------|----------|---------|
+| `inventory-consumer.ts` | `inventory.updated` | `order.created` | Validate & reserve stock |
+| `payment-consumer.ts` | `payment.request` | `inventory.reserved` | Process payment, rollback on fail |
+| `notification-consumer.ts` | `notification.send` | `payment.completed`, `inventory.failed`, `order.shipped`, `order.completed` | Send in-app notifications |
+| `analytics-consumer.ts` | `analytics` | `payment.completed` | Track revenue & best sellers |
+
+Queues are declared with dead-letter exchange `shop.dlx` → `shop.dead-letter` for failed messages.
 
 ## API Reference
 
@@ -261,7 +285,7 @@ npm run preview      # Preview production build
 
 ## Testing
 
-29 tests across 9 test files:
+40 tests across 13 test files (sequential, `vitest.config.ts` sets `fileParallelism: false`):
 
 | File | Tests | What it covers |
 |------|-------|----------------|
@@ -270,6 +294,10 @@ npm run preview      # Preview production build
 | `auth.test.ts` | 9 | Register, login, refresh, logout, validation |
 | `categories.test.ts` | 4 | CRUD + auth gating |
 | `products.test.ts` | 5 | CRUD + search + auth gating |
+| `inventory.test.ts` | 4 | Reserve stock, release stock, insufficient stock, logs |
+| `payments.test.ts` | 1 | Payment processing (success/failure) |
+| `orders.test.ts` | 4 | List, get, cancel pending, reject re-cancel |
+| `notifications.test.ts` | 2 | List notifications, reject unauthenticated |
 | `redis-cache.test.ts` | 2 | Cache get/set/del |
 | `cart.test.ts` | 3 | Add, get, clear |
 | `checkout.test.ts` | 3 | Order creation, cart clear, order listing |
@@ -279,11 +307,11 @@ npm run preview      # Preview production build
 
 ```
 mini-e-commerce/
-├── docker-compose.yml         # PostgreSQL, Redis, RabbitMQ
+├── docker-compose.yml         # PostgreSQL, Redis, RabbitMQ, backend, frontend
 ├── backend/
 │   ├── src/
 │   │   ├── config/            # Environment, DB, Redis, RabbitMQ config
-│   │   ├── domain/            # Entities + repository interfaces
+│   │   ├── domain/            # Entities + repository interfaces (8 modules)
 │   │   │   ├── auth/
 │   │   │   ├── categories/
 │   │   │   ├── products/
@@ -291,27 +319,36 @@ mini-e-commerce/
 │   │   │   ├── orders/
 │   │   │   ├── payments/
 │   │   │   ├── inventory/
-│   │   │   └── notifications/
-│   │   ├── application/       # Use cases (one per file)
+│   │   │   ├── notifications/
+│   │   │   └── analytics/
+│   │   ├── application/       # Use cases (one per file, ~30 files)
 │   │   │   ├── auth/
 │   │   │   ├── categories/
 │   │   │   ├── products/
 │   │   │   ├── cart/
 │   │   │   ├── orders/
 │   │   │   ├── notifications/
+│   │   │   ├── inventory/
+│   │   │   ├── payments/
+│   │   │   ├── analytics/
 │   │   │   └── admin/
-│   │   ├── infrastructure/    # Drizzle repos, Redis, RabbitMQ, auth
+│   │   ├── infrastructure/    # Drizzle repos, Redis, RabbitMQ consumers, auth
+│   │   │   ├── rabbitmq/consumers/   # 4 consumer files, one per queue
 │   │   ├── presentation/      # Routes, controllers, middleware
 │   │   ├── shared/            # Errors, types
-│   │   └── tests/             # Integration tests
+│   │   └── tests/             # 13 test files, 40 tests
+│   ├── Dockerfile
 │   ├── drizzle.config.ts
 │   ├── vitest.config.ts
 │   └── package.json
-├── frontend/                  # Vite + React 19 + TypeScript 6
-│   └── ...                    # (not yet implemented)
+├── frontend/                  # Next.js 16 + React 19 + Tailwind v4 + shadcn/ui
+│   ├── src/app/               # 19 routes (public, auth, admin)
+│   ├── src/components/        # UI components + business components
+│   ├── src/lib/               # API client, auth helpers
+│   ├── Dockerfile
+│   └── package.json
 └── docs/
     ├── PLAN.md                # Architecture plan
-    └── superpowers/
-        ├── specs/             # Design documents
-        └── plans/             # Implementation plans (13 phases)
+    ├── FRONTEND-AUDIT.md      # React best-practices audit
+    └── GAP-ANALYSIS.md        # Implementation gap tracker
 ```

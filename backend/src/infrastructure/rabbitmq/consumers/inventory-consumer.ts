@@ -5,6 +5,19 @@ import { reserveStockUseCase } from "../../../application/inventory/use-cases/re
 
 const EXCHANGE = "shop.exchange";
 
+/**
+ * Factory for the Inventory consumer.
+ *
+ * **Workflow:**
+ * 1. Listens on `inventory.updated` queue (bound to `order.created` routing key)
+ * 2. On message: parses `{ orderId, items }` from the event payload
+ * 3. Calls `reserveStock` use case which validates stock ≥ quantity for each item,
+ *    deducts from product stock in PostgreSQL, and writes an inventory log
+ * 4. If successful: publishes `inventory.reserved` event → triggers Payment worker
+ * 5. If any product has insufficient stock: nacks the message (goes to DLQ)
+ *
+ * **Error handling:** nack without requeue → message lands in `shop.dead-letter` queue.
+ */
 export function createInventoryConsumer(
   channel: Channel,
   productRepo: IProductRepository,

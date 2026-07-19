@@ -10,6 +10,25 @@ import { trackPaymentUseCase } from "../../../application/analytics/use-cases/tr
 
 const EXCHANGE = "shop.exchange";
 
+/**
+ * Factory for the Payment consumer.
+ *
+ * **Workflow:**
+ * 1. Listens on `payment.request` queue (bound to `inventory.reserved` routing key)
+ * 2. On message: parses `{ orderId }`, fetches the order from PostgreSQL
+ * 3. Calls `processPayment` use case which:
+ *    a. Creates a payment record (status: "pending")
+ *    b. Simulates a 100ms gateway delay
+ *    c. 90% success rate (configurable randomness)
+ * 4. **On success:**
+ *    - Publishes `payment.completed` event → triggers Notification + Analytics workers
+ *    - Tracks analytics (revenue, best sellers, daily stats)
+ * 5. **On failure:**
+ *    - Publishes `payment.failed` event
+ *    - Calls `releaseStock` to restore inventory from the reserved quantities
+ *
+ * **Error handling:** nack without requeue → DLQ.
+ */
 export function createPaymentConsumer(
   channel: Channel,
   orderRepo: IOrderRepository,

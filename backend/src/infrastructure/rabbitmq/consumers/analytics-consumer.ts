@@ -5,6 +5,22 @@ import { trackPaymentUseCase } from "../../../application/analytics/use-cases/tr
 
 const EXCHANGE = "shop.exchange";
 
+/**
+ * Factory for the Analytics consumer.
+ *
+ * **Workflow:**
+ * 1. Listens on `analytics` queue (bound to `payment.completed`)
+ * 2. On message: parses `{ orderId, amount }`, fetches the full order
+ * 3. Calls `trackPayment` use case which increments:
+ *    - Total revenue (`analytics:revenue`)
+ *    - Total order count (`analytics:total_orders`)
+ *    - Daily revenue (`analytics:daily:YYYY-MM-DD`)
+ *    - Best seller scores (`analytics:best_sellers` sorted set)
+ *
+ * All analytics data lives in Redis — no PostgreSQL writes.
+ *
+ * **Error handling:** nack without requeue → DLQ.
+ */
 export function createAnalyticsConsumer(
   channel: Channel,
   orderRepo: IOrderRepository,
