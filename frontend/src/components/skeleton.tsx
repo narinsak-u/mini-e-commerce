@@ -1,10 +1,10 @@
 import { cn } from "@/lib/utils";
 
-export function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
+function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
   return <div className={cn("animate-pulse rounded-md bg-muted", className)} {...props} />;
 }
 
-export function CardSkeleton() {
+function CardSkeleton() {
   return (
     <div className="rounded-xl border p-4 space-y-3">
       <Skeleton className="aspect-square w-full rounded-lg" />
