@@ -6,8 +6,19 @@ import { deleteProductUseCase } from "../../application/products/use-cases/delet
 import { getProductUseCase } from "../../application/products/use-cases/get-product";
 import { listProductsUseCase } from "../../application/products/use-cases/list-products";
 import { cacheService } from "../../infrastructure/redis/cache-service";
+import { z } from "zod";
 
 const PRODUCT_CACHE_TTL = 300;
+
+/** Zod schema matching list-products use-case input for query validation. */
+const listQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  search: z.string().optional(),
+  categoryId: z.string().uuid().optional(),
+  sortBy: z.enum(["price", "createdAt"]).optional(),
+  sortOrder: z.enum(["asc", "desc"]).optional(),
+});
 
 /** Product CRUD endpoints with search, filter, and pagination. */
 export function createProductController(
@@ -27,25 +38,29 @@ export function createProductController(
       const cacheKey = `products:list:${JSON.stringify(req.query)}`;
       const cached = await cacheService.get(cacheKey);
       if (cached) { res.json(cached); return; }
-      const result = await list(req.query);
+      const params = listQuerySchema.parse(req.query);
+      const result = await list(params);
       await cacheService.set(cacheKey, result, PRODUCT_CACHE_TTL);
       res.json(result);
     }),
     getById: asyncHandler(async (req: Request, res: Response) => {
-      const cacheKey = `products:${req.params.id}`;
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const cacheKey = `products:${id}`;
       const cached = await cacheService.get(cacheKey);
       if (cached) { res.json(cached); return; }
-      const result = await get(req.params.id);
+      const result = await get(id);
       await cacheService.set(cacheKey, result, PRODUCT_CACHE_TTL);
       res.json(result);
     }),
     update: asyncHandler(async (req: Request, res: Response) => {
-      const result = await update(req.params.id, req.body);
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const result = await update(id, req.body);
       await cacheService.delPattern("products:*");
       res.json(result);
     }),
     delete: asyncHandler(async (req: Request, res: Response) => {
-      await del(req.params.id);
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      await del(id);
       await cacheService.delPattern("products:*");
       res.status(204).send();
     }),
