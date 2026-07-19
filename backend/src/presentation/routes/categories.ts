@@ -1,3 +1,53 @@
+/**
+ * @openapi
+ * /categories:
+ *   get:
+ *     tags: [Categories]
+ *     summary: List all categories
+ *     responses:
+ *       200:
+ *         description: Category list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items: { $ref: "#/components/schemas/Category" }
+ *   post:
+ *     tags: [Categories]
+ *     summary: Create category (admin)
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       201:
+ *         description: Category created
+ * /categories/{id}:
+ *   patch:
+ *     tags: [Categories]
+ *     summary: Update category (admin)
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Category updated
+ *   delete:
+ *     tags: [Categories]
+ *     summary: Delete category (admin)
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       204:
+ *         description: Category deleted
+ */
 import { Router } from "express";
 import { createDrizzleCategoryRepo } from "../../infrastructure/database/repositories/drizzle-category-repo";
 import { createCategoryUseCase } from "../../application/categories/use-cases/create-category";

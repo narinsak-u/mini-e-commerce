@@ -1,3 +1,57 @@
+/**
+ * @openapi
+ * /cart:
+ *   get:
+ *     tags: [Cart]
+ *     summary: Get cart contents
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Cart with items and total
+ *         content:
+ *           application/json:
+ *             schema: { $ref: "#/components/schemas/Cart" }
+ *   delete:
+ *     tags: [Cart]
+ *     summary: Clear cart
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Cart cleared
+ * /cart/items:
+ *   post:
+ *     tags: [Cart]
+ *     summary: Add item to cart
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Item added
+ * /cart/items/{productId}:
+ *   patch:
+ *     tags: [Cart]
+ *     summary: Update item quantity
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - name: productId
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Quantity updated
+ *   delete:
+ *     tags: [Cart]
+ *     summary: Remove item
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - name: productId
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Item removed
+ */
 import { Router } from "express";
 import { createRedisCartRepo } from "../../infrastructure/redis/cart-repository";
 import { createDrizzleProductRepo } from "../../infrastructure/database/repositories/drizzle-product-repo";

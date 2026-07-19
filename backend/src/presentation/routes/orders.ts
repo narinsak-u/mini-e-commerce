@@ -1,3 +1,59 @@
+/**
+ * @openapi
+ * /orders:
+ *   get:
+ *     tags: [Orders]
+ *     summary: List current user orders
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Paginated order list
+ *         content:
+ *           application/json:
+ *             schema: { $ref: "#/components/schemas/PaginatedOrders" }
+ * /orders/{id}:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Get order details
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Order detail with items
+ *   patch:
+ *     tags: [Orders]
+ *     summary: Update order status (admin)
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Order updated
+ * /orders/{id}/cancel:
+ *   post:
+ *     tags: [Orders]
+ *     summary: Cancel own order (customer, pending only)
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Order cancelled
+ *       400:
+ *         description: Only pending orders can be cancelled
+ *       403:
+ *         description: Not your order
+ */
 import { Router } from "express";
 import { createDrizzleOrderRepo } from "../../infrastructure/database/repositories/drizzle-order-repo";
 import { getOrderUseCase } from "../../application/orders/use-cases/get-order";

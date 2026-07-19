@@ -1,3 +1,30 @@
+/**
+ * @openapi
+ * /notifications:
+ *   get:
+ *     tags: [Notifications]
+ *     summary: List user notifications
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Paginated notification list
+ *         content:
+ *           application/json:
+ *             schema: { $ref: "#/components/schemas/PaginatedNotifications" }
+ * /notifications/{id}/read:
+ *   patch:
+ *     tags: [Notifications]
+ *     summary: Mark notification as read
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Marked as read
+ */
 import { Router } from "express";
 import { createDrizzleNotificationRepo } from "../../infrastructure/database/repositories/drizzle-notification-repo";
 import { listNotificationsUseCase } from "../../application/notifications/use-cases/list-notifications";

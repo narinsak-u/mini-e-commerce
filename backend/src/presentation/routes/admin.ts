@@ -1,3 +1,41 @@
+/**
+ * @openapi
+ * /admin/analytics:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Get dashboard analytics (admin)
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Analytics data
+ *         content:
+ *           application/json:
+ *             schema: { $ref: "#/components/schemas/Analytics" }
+ * /admin/dashboard:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Get dashboard overview (admin)
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Dashboard data
+ * /admin/users:
+ *   get:
+ *     tags: [Admin]
+ *     summary: List all users (admin)
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: User list
+ * /admin/users/{id}/role:
+ *   patch:
+ *     tags: [Admin]
+ *     summary: Update user role (admin)
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Role updated
+ */
 import { Router } from "express";
 import { createAdminController } from "../controllers/admin-controller";
 import { authMiddleware } from "../middleware/auth";

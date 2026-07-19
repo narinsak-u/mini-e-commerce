@@ -1,3 +1,19 @@
+/**
+ * @openapi
+ * /checkout:
+ *   post:
+ *     tags: [Checkout]
+ *     summary: Create order from cart and publish order.created event
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       201:
+ *         description: Order created
+ *         content:
+ *           application/json:
+ *             schema: { $ref: "#/components/schemas/Order" }
+ *       400:
+ *         description: Cart is empty
+ */
 import { Router } from "express";
 import { createDrizzleOrderRepo } from "../../infrastructure/database/repositories/drizzle-order-repo";
 import { createRedisCartRepo } from "../../infrastructure/redis/cart-repository";

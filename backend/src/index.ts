@@ -8,7 +8,9 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
+import swaggerUi from "swagger-ui-express";
 import { env } from "./config/env";
+import { swaggerSpec } from "./config/swagger";
 import { errorHandler } from "./presentation/middleware/error-handler";
 import authRoutes from "./presentation/routes/auth";
 import categoryRoutes from "./presentation/routes/categories";
@@ -33,6 +35,11 @@ app.use(requestLogger);
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
+
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: ".swagger-ui .topbar { display: none }",
+  customSiteTitle: "ShopFlow API Docs",
+}));
 
 app.use("/auth", authRoutes);
 app.use("/categories", categoryRoutes);
