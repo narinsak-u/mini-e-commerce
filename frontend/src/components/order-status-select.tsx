@@ -32,6 +32,7 @@ export function OrderStatusSelect({ orderId, currentStatus }: { orderId: string;
       value={status}
       onChange={e => handleChange(e.target.value)}
       disabled={saving}
+      aria-label="Order status"
       className="h-7 text-xs rounded border border-input bg-background px-2 cursor-pointer"
     >
       {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
