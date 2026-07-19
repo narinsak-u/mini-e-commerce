@@ -6,7 +6,7 @@ interface Order { id: string; status: string; totalAmount: number; createdAt: st
 
 export default async function AdminOrdersPage() {
   let orders: Order[] = [];
-  try { const res = await api<{ data: Order[] }>("/admin/orders"); orders = res.data; } catch {}
+  try { const res = await api<{ data: Order[] }>("/admin/orders"); orders = res.data; } catch { console.error("Failed to load orders"); }
 
   return (
     <div>

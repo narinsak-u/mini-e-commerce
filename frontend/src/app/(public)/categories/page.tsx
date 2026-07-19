@@ -7,7 +7,7 @@ interface Category { id: string; name: string; slug: string; description: string
 
 export default async function CategoriesPage() {
   let categories: Category[] = [];
-  try { const res = await api<{ data: Category[] }>("/categories"); categories = res.data; } catch {}
+  try { const res = await api<{ data: Category[] }>("/categories"); categories = res.data; } catch { console.error("Failed to load categories"); }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">

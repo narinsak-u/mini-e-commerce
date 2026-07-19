@@ -5,7 +5,7 @@ interface Dashboard { revenue: number; totalOrders: number; dailyRevenue: number
 
 export default async function AdminDashboardPage() {
   let dashboard: Dashboard = { revenue: 0, totalOrders: 0, dailyRevenue: 0, bestSellers: [] };
-  try { dashboard = await api<Dashboard>("/admin/analytics"); } catch {}
+  try { dashboard = await api<Dashboard>("/admin/analytics"); } catch { console.error("Failed to load dashboard"); }
 
   return (
     <div>

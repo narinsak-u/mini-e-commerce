@@ -15,7 +15,7 @@ export default async function OrdersPage() {
   try {
     const res = await api<{ data: Order[] }>("/orders");
     orders = res.data;
-  } catch {}
+  } catch { console.error("Failed to load orders"); }
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
