@@ -1,200 +1,531 @@
 # Backend Architecture & Workflows
 
-## Overview
+Express.js + TypeScript modular monolith using **Clean Architecture**. PostgreSQL (Drizzle ORM) for persistence, Redis for cache/cart/analytics/rate-limiting, RabbitMQ for event-driven background workers.
 
-Express.js + TypeScript modular monolith using Clean Architecture. PostgreSQL (Drizzle ORM) for persistence, Redis for cache/cart/analytics, RabbitMQ for event-driven background workers.
+---
 
-## Directory Structure
+## Layer Architecture
+
+### The Dependency Rule
 
 ```
-src/
-├── domain/              # Entities, repository interfaces, business rules
-│   ├── auth/            # User entity, repo interface
-│   ├── products/        # Product entity + repo interface
-│   ├── categories/      # Category entity + repo interface
-│   ├── cart/            # Cart entity + repo interface
-│   ├── orders/          # Order entity + repo interface
-│   ├── payments/        # Payment entity + repo interface
-│   ├── inventory/       # Inventory log entity + repo interface
-│   ├── notifications/   # Notification entity + repo interface
-│   └── analytics/       # Analytics store interface
-├── application/         # Use cases (one per file), input validation (Zod)
-│   ├── auth/            # register, login, refresh-token, logout
-│   ├── products/        # CRUD + list with filters
-│   ├── categories/      # CRUD
-│   ├── cart/            # add-item, remove-item, update-item, get-cart, clear-cart
-│   ├── orders/          # create-order, list-orders, get-order, cancel-order, update-status
-│   ├── payments/        # process-payment
-│   ├── inventory/       # reserve-stock, release-stock
-│   ├── notifications/   # list-notifications, mark-read
-│   ├── analytics/       # track-payment
-│   └── admin/           # get-dashboard, list-users, update-user-role
-├── infrastructure/      # Implementations of domain interfaces
-│   ├── database/
-│   │   ├── drizzle/schema/   # Table definitions (users, products, categories, orders, etc.)
-│   │   └── repositories/     # Drizzle implementations of repo interfaces
-│   ├── redis/           # cache-service, cart-repository, analytics-store, rate-limiter, session-store
-│   ├── auth/            # jwt-service, password-hasher
-│   ├── rabbitmq/consumers/   # inventory, payment, notification, analytics consumers
-│   └── workers/         # Worker orchestrator (starts all consumers)
-├── presentation/        # HTTP layer
-│   ├── routes/          # Express Router per module, wires DI
-│   ├── controllers/     # Request/response handling, uses use cases
-│   └── middleware/      # auth (JWT), rbac, error-handler, async-handler, request-logger
-├── config/              # env.ts, database.ts, redis.ts, rabbitmq.ts (singletons)
-├── shared/              # errors/app-error.ts (error hierarchy), types/index.ts (Role, OrderStatus)
-└── tests/               # Vitest integration tests
+┌──────────────────────────────────────────────────┐
+│                  Presentation                     │
+│  (routes, controllers, middleware)                │
+│  Depends on: Application                         │
+├──────────────────────────────────────────────────┤
+│                  Application                      │
+│  (use cases, DTOs, service interfaces)            │
+│  Depends on: Domain (interfaces)                  │
+├──────────────────────────────────────────────────┤
+│                  Domain                           │
+│  (entities, repository interfaces, value objects) │
+│  Depends on: nothing                             │
+├──────────────────────────────────────────────────┤
+│                Infrastructure                     │
+│  (Drizzle repos, Redis, RabbitMQ, JWT, bcrypt)    │
+│  Implements: Domain + Application interfaces     │
+└──────────────────────────────────────────────────┘
 ```
 
-## Clean Architecture Flow
+**The golden rule:** `Domain` never imports from `Infrastructure`. Ever. Application depends only on interfaces defined in Domain. Infrastructure exists to implement those interfaces. Routes wire everything at the edge.
+
+### How a Request Flows Through the Layers
 
 ```
 HTTP Request
-  → Presentation (route → middleware → controller)
-    → Application (use case, validates input with Zod)
-      → Domain (entities, business rules)
-        → Infrastructure (Drizzle repo, Redis, RabbitMQ)
+    │
+    ▼
+┌──────────────────────┐
+│  1. Route            │  Routes are the composition root: they instantiate
+│  (routes/*.ts)       │  repos (infra) → create use cases (application) →
+│                      │  create controller (presentation) → attach middleware.
+│                      │  Example: routes/products.ts wires createProductUseCase(repo)
+│                      │  into the POST /products handler.
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│  2. Middleware        │  Express middleware pipeline runs in order:
+│  (middleware/*.ts)    │  auth (JWT verify) → rbac (role check) → controller.
+│                      │  authMiddleware attaches { sub, role } to req.user.
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│  3. Controller        │  Thin layer. Parses req.params/body/query,
+│  (controllers/*.ts)   │  calls use case, sends res.status().json().
+│                      │  Every method is wrapped in asyncHandler which
+│                      │  catches thrown errors → errorHandler middleware.
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│  4. Use Case          │  One function per file. Accepts domain interfaces
+│  (application/*.ts)   │  via constructor injection. Validates input with Zod.
+│                      │  Orchestrates business logic by calling domain entities
+│                      │  and repository interfaces. Never imports infrastructure.
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│  5. Domain Entity     │  Pure data + pure functions. No I/O, no framework deps.
+│  (domain/*/entity.ts) │  Factory functions (createProduct, reduceStock) return
+│                      │  new entity instances. Validation rules live here.
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│  6. Repository (iface)│  Interface defined in Domain. Method signatures only.
+│  (domain/*/repo.ts)   │  Example: IProductRepository { findById, save, update }
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│  7. Repository (impl) │  Concrete implementation in Infrastructure.
+│  (infra/drizzle/*)    │  Drizzle queries, Redis commands, HTTP calls.
+│                      │  Implements the interface from step 6.
+└──────────────────────┘
 ```
 
-**Key rule:** Domain never imports from Infrastructure. Use cases accept repository interfaces (DI), not concrete implementations. Routes wire everything together at the edge.
+### Dependency Injection (without a container)
 
-### Example: Create Product
+Every use case is a **factory function** that takes interfaces and returns a **handler function**:
 
+```ts
+// application/products/create-product.ts
+export function createProductUseCase(repo: IProductRepository) {
+  return async (input: z.infer<typeof schema>) => {
+    const data = schema.parse(input);
+    const product = createProduct(data);      // domain entity factory
+    await repo.save(product);                 // infra (behind interface)
+    return product;
+  };
+}
 ```
-POST /products (admin)
-  → authMiddleware → rbacMiddleware("admin")
-  → product-controller.create
-  → createProductUseCase(repo)          # repo injected via route file
-    → schema.parse(input)               # Zod validation
-    → repo.findBySlug(slug)             # duplicate check
-    → createProduct(data)               # domain entity factory
-    → repo.save(product)                # Drizzle insert
-  ← 201 + product JSON
-```
 
-## Dependency Injection
-
-No DI container. Routes act as the composition root:
+Routes wire the chain at startup:
 
 ```ts
 // presentation/routes/products.ts
-const repo = createDrizzleProductRepo();           // infrastructure
-const controller = createProductController(        // presentation
-  createProductUseCase(repo),                      // application
+const repo = createDrizzleProductRepo();                // infrastructure
+const controller = createProductController(             // presentation
+  createProductUseCase(repo),                           // application
   listProductsUseCase(repo),
-  // ...
 );
 router.post("/", authMiddleware, rbacMiddleware("admin"), controller.create);
 ```
 
-Every use case is a function that takes interfaces and returns a function. This keeps use cases composable and testable (pass mocks in tests).
+Tests swap real repos for mocks by calling the same use case factory with a test double.
 
-## Event-Driven Workflow (RabbitMQ)
+---
 
-### Exchange & Queues
+## Module Workflows
+
+### Authentication
+
+```
+POST /auth/register
+  Body: { name, email, password }
+  1. Zod validates input (email format, password ≥ 6 chars)
+  2. Checks duplicate email → 400 if exists
+  3. Hashes password (bcrypt, cost 12)
+  4. Creates User entity with random UUID, role="customer"
+  5. Saves to PostgreSQL
+  6. Signs access token (15min) + refresh token (7d)
+  7. Returns { user, accessToken, refreshToken }
+
+POST /auth/login
+  Body: { email, password }
+  1. Looks up user by email → 401 if not found
+  2. Compares bcrypt hash → 401 if mismatch
+  3. Signs token pair
+  4. Returns { user, accessToken, refreshToken }
+
+POST /auth/refresh
+  Body: { refreshToken }
+  1. Verifies refresh token signature and expiry → 401 if invalid
+  2. Confirms user still exists → 401 if deleted
+  3. Signs new token pair
+  4. Returns { accessToken, refreshToken }
+
+POST /auth/logout
+  Body: { refreshToken }
+  1. Accepts (and ignores) the refresh token
+  ponytail: no server-side token invalidation. Add a Redis blacklist
+  when refresh-token-level logout is required.
+```
+
+### Products
+
+```
+GET /products?page=1&limit=10&q=search&categoryId=...&sortBy=price&sortOrder=desc
+  1. Validates query params
+  2. Calls findMany with filters → paginated Drizzle query with left join on categories
+  3. Returns { data: Product[], total, page, limit }
+     Note: only isActive=true products are returned (soft-delete)
+
+POST /products (admin)
+  Body: { name, price, description?, stock?, categoryId?, imageUrl? }
+  1. Zod validates input (name required, price > 0, etc.)
+  2. Generates slug from name (lowercased, hyphenated, sanitized)
+  3. Checks slug uniqueness → 400 if duplicate
+  4. Creates Product entity via factory (default stock=0, isActive=true)
+  5. Saves to PostgreSQL
+  6. Returns 201 + Product JSON
+
+PATCH /products/:id (admin)
+  1. Finds product by ID → 404 if missing
+  2. Applies partial update via updateProduct() entity function
+  3. Persists to PostgreSQL
+  4. Invalidates Redis product cache
+
+DELETE /products/:id (admin)
+  1. Sets isActive=false (soft delete)
+  2. Invalidates Redis product cache
+```
+
+### Cart (Redis-backed)
+
+Cart data lives entirely in Redis hashes (`cart:{userId}`). No PostgreSQL writes for cart operations.
+
+```
+GET /cart
+  1. Reads hash `cart:{userId}` from Redis
+  2. Each field is productId → quantity
+  3. Looks up product names/prices from Redis product cache
+  4. Computes total = sum(price × quantity)
+  5. Returns { items: CartItem[], total: number }
+
+POST /cart/items  Body: { productId, quantity }
+  1. Validates product exists (optional, depends on cache availability)
+  2. Increments quantity in Redis hash via HINCRBY
+  3. Returns fresh cart
+
+PATCH /cart/items/:productId  Body: { quantity }
+  1. Sets quantity via HSET (if ≤ 0, removes via HDEL)
+  2. Returns fresh cart
+
+DELETE /cart/items/:productId
+  1. Removes field via HDEL
+  2. Returns fresh cart
+
+DELETE /cart
+  1. Runs DEL on `cart:{userId}`
+  2. Returns empty cart
+```
+
+### Checkout & Orders
+
+```
+POST /checkout  (the most complex flow)
+  1. createOrderUseCase:
+     a. cartRepo.findByUserId(userId) → throws if empty
+     b. createOrder({ userId, totalAmount }) → domain entity (status="pending")
+     c. orderRepo.save(order) → PostgreSQL
+     d. For each cart item: createOrderItem() → orderRepo.saveItem()
+     e. cartRepo.clear(userId) → Redis
+     f. publishEvent("order.created", { orderId, items, totalAmount }) → RabbitMQ
+     g. Returns order with items
+
+  2. RabbitMQ delivers "order.created" to inventory.updated queue
+     → Inventory Consumer (see Event-Driven Workflows below)
+
+  3. Worker chain continues asynchronously while the HTTP response
+     is already returned to the customer (201 + order JSON).
+
+GET /orders
+  1. orderRepo.findByUserId(userId, page, limit) → paginated
+
+GET /orders/:id
+  1. orderRepo.findById(id) → 404 if missing
+  2. Returns order with items
+
+PATCH /orders/:id (admin)  Body: { status }
+  1. Zod validates against OrderStatus enum
+  2. orderRepo.updateStatus(id, status)
+
+POST /orders/:id/cancel (customer)
+  1. cancelOrderUseCase:
+     a. Finds order → 404 if missing
+     b. Checks userId matches token → 403 if different user
+     c. Checks status === "pending" → 400 if already processed
+     d. Sets status to "cancelled"
+     e. Returns updated order
+```
+
+### Notifications
+
+```
+GET /notifications
+  1. notificationRepo.findByUserId(userId) → paginated
+  2. Returns { data: Notification[], total }
+
+PATCH /notifications/:id/read
+  1. notificationRepo.markRead(id)
+  2. Returns success
+```
+
+### Admin
+
+```
+GET /admin/analytics
+  1. analyticsStore.getAnalytics() → reads from Redis:
+     - analytics:revenue (string counter)
+     - analytics:total_orders (string counter)
+     - analytics:best_sellers (sorted set, ZREVRANGE)
+     - analytics:daily:YYYY-MM-DD (string counter)
+  2. Returns { revenue, totalOrders, bestSellers, dailyRevenue }
+
+GET /admin/users
+  1. userRepo.findAll(page, limit) → paginated
+
+PATCH /admin/users/:id/role  Body: { role }
+  1. userRepo.updateRole(id, role)
+  2. Returns updated user
+```
+
+---
+
+## Event-Driven Workflows (RabbitMQ)
+
+### Exchange Topology
 
 ```
 Exchange: shop.exchange (topic, durable)
-DLX: shop.dlx (fanout) → DLQ: shop.dead-letter
+    │
+    ├── routing key: "order.created"
+    │   └── Queue: inventory.updated (DLX: shop.dlx)
+    │
+    ├── routing key: "inventory.reserved"
+    │   └── Queue: payment.request (DLX: shop.dlx)
+    │
+    ├── routing keys: "payment.completed", "inventory.failed",
+    │                  "order.shipped", "order.completed"
+    │   └── Queue: notification.send (DLX: shop.dlx)
+    │
+    └── routing key: "payment.completed"
+        └── Queue: analytics (DLX: shop.dlx)
+
+Dead-letter exchange: shop.dlx (fanout)
+    └── Queue: shop.dead-letter (messages land here on nack/expiry)
 ```
 
-| Queue | Bound To (routing key) | Consumer |
-|-------|----------------------|----------|
-| `inventory.updated` | `order.created` | Inventory |
-| `payment.request` | `inventory.reserved` | Payment |
-| `notification.send` | `payment.completed`, `inventory.failed`, `order.shipped`, `order.completed` | Notification |
-| `analytics` | `payment.completed` | Analytics |
-
-All queues use dead-lettering: failed messages (nack without requeue) go to `shop.dead-letter`.
-
-### Checkout Flow (end-to-end)
+### Full Checkout Event Chain
 
 ```
-1. POST /checkout
-   → createOrderUseCase: creates order in PostgreSQL, clears Redis cart
-   → publishes "order.created" event
-
-2. Inventory Consumer (inventory.updated queue)
-   → reserveStockUseCase: validates stock ≥ quantity, deducts from product, logs inventory
-   → publishes "inventory.reserved" on success
-   → nack → DLQ on insufficient stock
-
-3. Payment Consumer (payment.request queue)
-   → processPaymentUseCase: creates payment record, simulates gateway (90% success)
-   → on success: publishes "payment.completed"
-   → on failure: publishes "payment.failed", calls releaseStockUseCase to restore inventory
-
-4. Notification Consumer (notification.send queue)
-   → saves in-app notification to PostgreSQL
-   → logs mock email to stdout
-
-5. Analytics Consumer (analytics queue)
-   → trackPaymentUseCase: increments revenue, order count, daily stats, best sellers in Redis
+HTTP Request (synchronous)
+┌─────────────────────────────────────────┐
+│  POST /checkout                          │
+│  → Create order in PostgreSQL            │
+│  → Clear Redis cart                      │
+│  → Publish "order.created" event         │
+│  ← 201 Order JSON (response sent)        │
+└─────────────────────────────────────────┘
+                                           │
+              ┌────────────────────────────┤
+              │  "order.created"            │
+              ▼                             ▼
+┌─────────────────────────┐    ┌─────────────────────────┐
+│ Inventory Consumer      │    │   (other consumers      │
+│ (inventory.updated q)   │    │    ignore this key)      │
+│                         │    │                          │
+│ 1. Parse { orderId,     │    │                          │
+│      items }            │    │                          │
+│ 2. For each item:       │    │                          │
+│    a. productRepo       │    │                          │
+│       .findById()       │    │                          │
+│    b. reduceStock()     │    │                          │
+│       → null? nack DLQ  │    │                          │
+│    c. productRepo       │    │                          │
+│       .update()         │    │                          │
+│    d. inventoryRepo     │    │                          │
+│       .save(log)        │    │                          │
+│ 3. Publish              │    │                          │
+│    "inventory.reserved" │    │                          │
+└──────────┬──────────────┘    └─────────────────────────┘
+           │
+           │  "inventory.reserved"
+           ▼
+┌─────────────────────────┐
+│ Payment Consumer        │
+│ (payment.request q)     │
+│                         │
+│ 1. orderRepo.findById() │
+│ 2. processPayment():    │
+│    a. Create payment    │
+│       record (pending)  │
+│    b. Simulate gateway  │
+│       (100ms delay)     │
+│    c. Random success    │
+│       (90% chance)      │
+│                         │
+│   ┌─── ON SUCCESS ──┐   │
+│   │ Publish          │   │
+│   │ "payment.com-    │   │
+│   │ pleted"          │   │
+│   │ trackPayment()   │   │
+│   │ (analytics)      │   │
+│   └─────────────────┘   │
+│                         │
+│   ┌─── ON FAILURE ──┐   │
+│   │ Publish          │   │
+│   │ "payment.failed" │   │
+│   │ releaseStock()   │   │
+│   │ (restore inv.)   │   │
+│   └─────────────────┘   │
+└──────┬──────────┬───────┘
+       │          │
+       │          │  "payment.failed"
+       │          ▼
+       │   (Inventory restored,
+       │    order stays "pending"
+       │    for manual review)
+       │
+       │  "payment.completed"
+       ▼
+┌─────────────────────┐   ┌─────────────────────┐
+│ Notification        │   │ Analytics Consumer  │
+│ (notification.send) │   │ (analytics queue)   │
+│                     │   │                     │
+│ 1. Fetch order      │   │ 1. trackPayment():  │
+│ 2. Save in-app      │   │    Redis:           │
+│    notification     │   │    • INCR revenue   │
+│    (PostgreSQL)     │   │    • INCR orders    │
+│ 3. Log mock email   │   │    • ZINCRBY best   │
+│    to stdout        │   │      sellers        │
+│                     │   │    • INCRBY daily   │
+│                     │   │      revenue        │
+└─────────────────────┘   └─────────────────────┘
 ```
 
-### Worker Startup
+### Worker Implementation
 
-`startWorkers()` in `src/infrastructure/workers/index.ts` is called once from `src/index.ts` after `app.listen()`. It creates all repo instances, passes them to consumer factories, and starts all four consumers in parallel.
+Each consumer is a separate factory in `src/infrastructure/rabbitmq/consumers/`:
+
+| File | Queue | Purpose |
+|------|-------|---------|
+| `inventory-consumer.ts` | `inventory.updated` | Validate stock, deduct, log, publish next event |
+| `payment-consumer.ts` | `payment.request` | Mock payment gateway, update DB, publish result |
+| `notification-consumer.ts` | `notification.send` | Save in-app notification, log email |
+| `analytics-consumer.ts` | `analytics` | Update Redis counters |
+
+All consumers follow the same pattern:
+1. Bind queue to exchange with routing key
+2. Register consumer callback
+3. Parse message → call application use case → ack on success
+4. On error: log + nack (no requeue) → message lands in `shop.dead-letter`
+
+The orchestrator in `src/infrastructure/workers/index.ts` creates repos and starts all consumers in parallel via `Promise.all`.
+
+---
 
 ## Redis Responsibilities
 
-| Feature | Key Pattern | Implementation |
-|---------|-------------|----------------|
-| Product cache | `products:list:*`, `products:{id}` | `cache-service.ts` — 5min TTL, invalidated on write |
-| Shopping cart | `cart:{userId}` (hash) | `cart-repository.ts` — hash field = productId, value = quantity |
-| Analytics | `analytics:revenue`, `analytics:best_sellers` (sorted set), `analytics:daily:{date}` | `analytics-store.ts` |
-| Rate limiting | `rate:{userId}` | `rate-limiter.ts` |
-| Session | `session:{userId}` | `session-store.ts` |
+| Feature | Key Pattern | TTL | Details |
+|---------|-------------|-----|---------|
+| Product cache | `products:*` | 5 min | Get/set around findById and findMany |
+| Shopping cart | `cart:{userId}` | none (persistent) | Redis hash: field=productId, value=quantity |
+| Analytics revenue | `analytics:revenue` | none | INCRBY float counter |
+| Analytics orders | `analytics:total_orders` | none | INCR counter |
+| Analytics best sellers | `analytics:best_sellers` | none | ZINCRBY sorted set |
+| Analytics daily | `analytics:daily:{date}` | none | INCRBY float |
+| Rate limiting | `rate:{userId}` | 60s | Sliding window via sorted set |
+| Session cache | `session:{tokenHash}` | 7 days | JSON string, refresh TTL on access |
+
+**Rule:** Redis never replaces PostgreSQL. It's a cache/auxiliary store. Cart uses Redis for performance (fast reads/writes) but order data is always in PostgreSQL.
+
+---
 
 ## Authentication & Authorization
 
-- **JWT**: Access token (15min) + refresh token (7d), HS256, signed with `JWT_SECRET`
-- **authMiddleware**: extracts `Bearer` token from `Authorization` header, verifies, attaches `{ sub, role }` to `req.user`
-- **rbacMiddleware**: checks `req.user.role` against allowed roles (used for admin-only routes)
-- **Register/Login**: returns both tokens; refresh endpoint swaps refresh token for new pair; logout deletes refresh token
+```
+JWT Token Payload: { sub: string (userId), role: "customer" | "admin" }
+                    signed with HS256 + JWT_SECRET
+
+Access token:  15min expiry (configurable via JWT_EXPIRES_IN)
+Refresh token: 7d expiry (configurable via JWT_REFRESH_EXPIRES_IN)
+```
+
+### Middleware Pipeline
+
+```
+1. authMiddleware:
+   - Extracts "Bearer <token>" from Authorization header
+   - jwt.verify(token) → payload or throws
+   - Attaches payload to req.user
+   - 401 if missing/invalid/expired
+
+2. rbacMiddleware("admin"):
+   - Checks req.user.role === "admin"
+   - 403 if insufficient role
+```
+
+### Rate Limiting
+
+Login and register endpoints are rate-limited via Redis sliding window:
+- 100 requests per 60 seconds per IP (configurable)
+- Implemented in `src/infrastructure/redis/rate-limiter.ts`
+
+---
 
 ## Error Handling
 
-Custom error hierarchy in `src/shared/errors/app-error.ts`:
+### Error Hierarchy
 
 ```
-AppError (base, 500)
-├── NotFoundError (404)
-├── UnauthorizedError (401)
-├── ForbiddenError (403)
-└── ValidationError (400)
+AppError (base, statusCode defaults to 500)
+├── NotFoundError      (404, code: "NOT_FOUND")
+├── UnauthorizedError  (401, code: "UNAUTHORIZED")
+├── ForbiddenError     (403, code: "FORBIDDEN")
+└── ValidationError    (400, code: "VALIDATION_ERROR")
 ```
 
-`errorHandler` middleware catches all errors. Zod errors → 400 with validation message. AppError subclasses → mapped status code. Unknown errors → 500. `asyncHandler` wraps all controllers to forward async errors.
+### Error Flow
 
-## Database
-
-PostgreSQL via Drizzle ORM with `postgres.js` driver. Schema in `src/infrastructure/database/drizzle/schema/`:
-
-- `users` — id, email, passwordHash, name, role, createdAt
-- `products` — id, name, slug, description, price (NUMERIC), stock, categoryId, imageUrl, isActive, timestamps
-- `categories` — id, name, slug, description, timestamps
-- `orders` — id, userId, totalAmount, status, timestamps
-- `order_items` — id, orderId, productId, productName, productPrice, quantity
-- `payments` — id, orderId, amount, status, timestamps
-- `inventory_logs` — id, orderId, productId, quantity, action, timestamp
-- `notifications` — id, userId, type, title, body, read, createdAt
-
-## Graceful Shutdown
-
-`SIGTERM` and `SIGINT` handlers close the RabbitMQ channel/connection before exiting.
-
-## Commands
-
-```bash
-cd backend
-npm run dev          # tsx watch src/index.ts
-npm run build        # tsc
-npm run start        # node dist/index.js
-npm run lint         # eslint src/
-npm run test         # vitest run
-npm run test:watch   # vitest (watch mode)
-npm run db:generate  # drizzle-kit generate
-npm run db:migrate   # drizzle-kit migrate
-npm run db:push      # drizzle-kit push
 ```
+Controller → throws AppError subclass
+  → asyncHandler catches it
+  → errorHandler middleware:
+    - AppError → status from error, JSON: { error: { code, message } }
+    - ZodError → 400 with formatted validation messages
+    - Unknown → 500, logged to console
+```
+
+### Response Format
+
+All errors return: `{ error: { code: string, message: string } }`
+Successful responses return the entity/collection directly (no wrapper).
+
+---
+
+## Database Schema
+
+PostgreSQL tables defined in `src/infrastructure/database/drizzle/schema/`:
+
+| Table | Key Columns | Notes |
+|-------|-------------|-------|
+| `users` | id (UUID PK), email (unique), password_hash, name, role | role enum: customer, admin |
+| `products` | id (UUID PK), name, slug (unique), price (NUMERIC), stock, category_id (FK), is_active | Soft-delete via is_active |
+| `categories` | id (UUID PK), name, slug (unique), description | |
+| `orders` | id (UUID PK), user_id (FK), status (enum), total_amount (NUMERIC) | Status: pending → paid → packing → shipping → completed, or cancelled |
+| `order_items` | id (UUID PK), order_id (FK), product_id, product_name (snapshot), quantity | Prices snapshot at order time |
+| `payments` | id (UUID PK), order_id (FK), amount, status (enum) | Status: pending, success, failed |
+| `inventory_logs` | id (UUID PK), order_id (FK), product_id (FK), quantity_change, type | Type: reserve, release, restock |
+| `notifications` | id (UUID PK), user_id (FK), type, title, body, read | |
+
+---
+
+## Key Design Decisions
+
+1. **One use case per file** — keeps them small, composable, testable. A use case that grows too large signals a missing domain concept.
+
+2. **No ORM in domain** — domain entities are plain TypeScript interfaces + factory functions. Drizzle schema is infrastructure-only.
+
+3. **RabbitMQ for async, not sync** — checkout returns immediately after saving the order. Workers process inventory/payment/notifications in the background. If a worker fails, the order still exists in PostgreSQL with status "pending".
+
+4. **Cart in Redis** — shopping carts are high-write, short-lived, and don't need ACID. Redis hashes provide fast read/write with no schema changes.
+
+5. **Dead letter queue** — every worker queue routes nacked messages to `shop.dead-letter` via `shop.dlx`. Failed messages don't get lost — they accumulate for inspection.
+
+6. **No DI container** — factory functions + manual wiring at route level. Keeps dependencies explicit, no magic, easy to debug. The "composition root" pattern is explicit in every route file.
