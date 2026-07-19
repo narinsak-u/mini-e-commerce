@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, ApiError } from "@/lib/api";
+import { ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useSaveProduct } from "@/lib/hooks/use-api";
 
 interface ProductFormProps {
   product?: { id: string; name: string; price: number; description: string | null; stock: number; imageUrl: string | null; categoryId: string | null };
@@ -21,27 +22,19 @@ export function ProductForm({ product, categories }: ProductFormProps) {
   const [stock, setStock] = useState(String(product?.stock ?? ""));
   const [imageUrl, setImageUrl] = useState(product?.imageUrl ?? "");
   const [categoryId, setCategoryId] = useState(product?.categoryId ?? "");
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const saveProduct = useSaveProduct();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     try {
       const payload = { name, price: Number(price), description, stock: Number(stock), imageUrl, categoryId: categoryId || undefined };
-      if (product) {
-        await api(`/products/${product.id}`, { method: "PATCH", body: JSON.stringify(payload) });
-        toast.success("Product updated");
-      } else {
-        await api("/products", { method: "POST", body: JSON.stringify(payload) });
-        toast.success("Product created");
-      }
+      await saveProduct.mutateAsync({ product: { ...payload, id: product?.id }, isNew: !product });
+      toast.success(product ? "Product updated" : "Product created");
       router.push("/admin/products");
       router.refresh();
     } catch (err: unknown) {
       toast.error(err instanceof ApiError ? err.message : "Failed to save product");
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -77,8 +70,8 @@ export function ProductForm({ product, categories }: ProductFormProps) {
               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Saving..." : product ? "Update Product" : "Create Product"}
+          <Button type="submit" className="w-full" disabled={saveProduct.isPending}>
+            {saveProduct.isPending ? "Saving..." : product ? "Update Product" : "Create Product"}
           </Button>
         </form>
       </CardContent>

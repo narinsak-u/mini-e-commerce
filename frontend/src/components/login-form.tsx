@@ -3,34 +3,25 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
+import { useLogin } from "@/lib/hooks/use-api";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const login = useLogin();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     try {
-      const res = await api<{ accessToken: string }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
-      await fetch("/api/auth/set-cookie", { method: "POST", body: JSON.stringify({ token: res.accessToken }) });
-      toast.success("Logged in successfully");
+      await login.mutateAsync({ email, password });
       router.push("/");
       router.refresh();
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Login failed";
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
+    } catch { /* toast handled by hook */ }
   }
 
   return (
@@ -46,7 +37,7 @@ export function LoginForm() {
             <Label htmlFor="password">Password</Label>
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>{loading ? "Logging in..." : "Login"}</Button>
+          <Button type="submit" className="w-full" disabled={login.isPending}>{login.isPending ? "Logging in..." : "Login"}</Button>
           <p className="text-sm text-center text-muted-foreground">Don&apos;t have an account? <Link href="/auth/register" className="text-primary underline">Register</Link></p>
         </form>
       </CardContent>

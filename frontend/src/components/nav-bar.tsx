@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Bell, User, LogOut, LayoutDashboard } from "lucide-react";
+import { useAuthStore } from "@/lib/store";
 
-export function NavBar({ session }: { session: { sub: string; role: string } | null }) {
+export function NavBar() {
+  const session = useAuthStore((s) => s.session);
+
   return (
     <nav className="border-b">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
