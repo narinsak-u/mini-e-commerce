@@ -4,6 +4,7 @@ import { notifications } from "../drizzle/schema/notifications";
 import type { INotificationRepository } from "../../../domain/notifications/repositories/notification-repository";
 import type { Notification } from "../../../domain/notifications/entities/notification";
 
+/** Drizzle implementation of INotificationRepository. */
 export function createDrizzleNotificationRepo(): INotificationRepository {
   return {
     async findByUserId(userId: string, page = 1, limit = 20) {

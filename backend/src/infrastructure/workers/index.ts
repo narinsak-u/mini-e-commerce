@@ -1,3 +1,10 @@
+/**
+ * Worker orchestrator.
+ *
+ * Gets a RabbitMQ channel, creates all repository + use case instances,
+ * and starts all four consumers in parallel.
+ * Each consumer is a separate factory in `rabbitmq/consumers/`.
+ */
 import { getRabbitChannel } from "../../config/rabbitmq";
 import { createDrizzleProductRepo } from "../database/repositories/drizzle-product-repo";
 import { createDrizzleInventoryRepo } from "../database/repositories/drizzle-inventory-repo";

@@ -3,6 +3,7 @@ import { asyncHandler } from "../middleware/async-handler";
 import { listNotificationsUseCase } from "../../application/notifications/use-cases/list-notifications";
 import { markNotificationReadUseCase } from "../../application/notifications/use-cases/mark-read";
 
+/** Notification listing and mark-as-read endpoints. */
 export function createNotificationController(
   list: ReturnType<typeof listNotificationsUseCase>,
   markRead: ReturnType<typeof markNotificationReadUseCase>,

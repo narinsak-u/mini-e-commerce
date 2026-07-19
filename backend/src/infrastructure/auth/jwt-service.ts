@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import { env } from "../../config/env";
 import type { IJwtService, TokenPayload } from "../../application/auth/interfaces/jwt-service";
 
+/** JWT implementation using jsonwebtoken. Signs with HS256 + configurable expiry. */
 export function createJwtService(): IJwtService {
   return {
     signAccessToken(payload: TokenPayload): string {

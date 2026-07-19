@@ -1,6 +1,7 @@
 import type { IProductRepository } from "../../../domain/products/repositories/product-repository";
 import { NotFoundError } from "../../../shared/errors/app-error";
 
+/** Soft-deletes a product by setting isActive = false. */
 export function deleteProductUseCase(repo: IProductRepository) {
   return async (id: string) => {
     const existing = await repo.findById(id);

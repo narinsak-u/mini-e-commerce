@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import type { IPasswordHasher } from "../../application/auth/interfaces/password-hasher";
 
+/** bcrypt password hasher with cost factor 12. */
 export function createPasswordHasher(): IPasswordHasher {
   return {
     async hash(password: string): Promise<string> {

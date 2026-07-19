@@ -13,4 +13,5 @@ router.use(authMiddleware);
 router.get("/", controller.list);
 router.patch("/:id/read", controller.markRead);
 
+/** Notification routes — list and mark-as-read. Requires authentication. */
 export default router;

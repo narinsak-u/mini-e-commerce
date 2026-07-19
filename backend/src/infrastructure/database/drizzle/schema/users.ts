@@ -1,5 +1,6 @@
 import { pgTable, uuid, varchar, timestamp, pgEnum } from "drizzle-orm/pg-core";
 
+/** Drizzle schema for users table. */
 export const roleEnum = pgEnum("role", ["customer", "admin"]);
 
 export const users = pgTable("users", {

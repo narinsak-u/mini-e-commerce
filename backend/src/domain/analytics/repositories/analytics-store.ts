@@ -1,3 +1,4 @@
+/** Redis-backed analytics store using counters, sorted sets, and daily keys. */
 export interface IAnalyticsStore {
   incrementRevenue(amount: number): Promise<void>;
   incrementOrders(): Promise<void>;

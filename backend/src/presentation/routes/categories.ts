@@ -22,4 +22,5 @@ router.post("/", authMiddleware, rbacMiddleware("admin"), controller.create);
 router.patch("/:id", authMiddleware, rbacMiddleware("admin"), controller.update);
 router.delete("/:id", authMiddleware, rbacMiddleware("admin"), controller.delete);
 
+/** Category routes — public list, admin-only write operations. */
 export default router;

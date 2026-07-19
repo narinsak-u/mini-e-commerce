@@ -1,6 +1,7 @@
 import { pgTable, uuid, varchar, text, numeric, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { categories } from "./categories";
 
+/** Drizzle schema for products table with full-text search fields. */
 export const products = pgTable("products", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),

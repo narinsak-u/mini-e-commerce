@@ -4,6 +4,7 @@ import { NotFoundError } from "../../../shared/errors/app-error";
 
 const schema = z.object({ role: z.enum(["customer", "admin"]) });
 
+/** Updates a user's role between customer and admin. */
 export function updateUserRoleUseCase(userRepo: IUserRepository) {
   return async (id: string, input: z.infer<typeof schema>) => {
     const data = schema.parse(input);

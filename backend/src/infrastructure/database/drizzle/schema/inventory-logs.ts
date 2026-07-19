@@ -2,6 +2,7 @@ import { pgTable, uuid, integer, varchar, timestamp } from "drizzle-orm/pg-core"
 import { products } from "./products";
 import { orders } from "./orders";
 
+/** Drizzle schema for inventory_logs table (FK to orders, products). */
 export const inventoryLogs = pgTable("inventory_logs", {
   id: uuid("id").defaultRandom().primaryKey(),
   productId: uuid("product_id").notNull().references(() => products.id),

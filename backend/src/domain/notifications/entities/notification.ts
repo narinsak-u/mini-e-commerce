@@ -1,13 +1,17 @@
+/**
+ * Represents an in-app notification for a user.
+ *
+ * **Properties:**
+ * - `type` — discriminator for notification category (`payment_success`, etc.)
+ * - `read` — boolean flag, toggled via the mark-as-read API
+ * - `body` — optional longer description (null for title-only notifications)
+ */
 export interface Notification {
   id: string;
   userId: string;
-  type: "order_confirmed" | "payment_success" | "shipping" | "delivered" | "order_cancelled";
+  type: string;
   title: string;
   body: string | null;
   read: boolean;
   createdAt: Date;
-}
-
-export function createNotification(props: { userId: string; type: Notification["type"]; title: string; body?: string }): Notification {
-  return { id: crypto.randomUUID(), userId: props.userId, type: props.type, title: props.title, body: props.body ?? null, read: false, createdAt: new Date() };
 }

@@ -1,3 +1,4 @@
+/** Application error hierarchy with HTTP status codes. */
 export class AppError extends Error {
   constructor(
     public statusCode: number,

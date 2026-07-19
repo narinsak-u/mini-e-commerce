@@ -13,6 +13,7 @@ const schema = z.object({
   isActive: z.boolean().optional(),
 });
 
+/** Updates a product's mutable fields. Only provided fields are changed. */
 export function updateProductUseCase(repo: IProductRepository) {
   return async (id: string, input: z.infer<typeof schema>) => {
     const data = schema.parse(input);

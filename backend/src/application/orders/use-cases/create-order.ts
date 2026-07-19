@@ -3,6 +3,7 @@ import type { ICartRepository } from "../../../domain/cart/repositories/cart-rep
 import { createOrder, createOrderItem } from "../../../domain/orders/entities/order";
 import { publishEvent } from "../../../config/rabbitmq";
 
+/** Creates an order from the user's current cart, publishes order.created event, and clears the cart. */
 export function createOrderUseCase(orderRepo: IOrderRepository, cartRepo: ICartRepository) {
   return async (userId: string) => {
     const cart = await cartRepo.findByUserId(userId);

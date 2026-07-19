@@ -1,5 +1,6 @@
 import { redis } from "../../config/redis";
 
+/** Redis-backed analytics store using counters, sorted sets, and daily keys. */
 export interface AnalyticsData {
   revenue: number;
   totalOrders: number;

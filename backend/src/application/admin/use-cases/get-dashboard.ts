@@ -3,6 +3,7 @@ import type { IProductRepository } from "../../../domain/products/repositories/p
 import type { IUserRepository } from "../../../domain/auth/repositories/user-repository";
 import { createAnalyticsStore } from "../../../infrastructure/redis/analytics-store";
 
+/** Aggregates analytics data (revenue, orders, best sellers, daily revenue) from Redis. */
 export function getDashboardUseCase(
   orderRepo: IOrderRepository,
   productRepo: IProductRepository,

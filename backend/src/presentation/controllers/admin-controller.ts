@@ -8,6 +8,7 @@ import { createDrizzleOrderRepo } from "../../infrastructure/database/repositori
 import { createDrizzleProductRepo } from "../../infrastructure/database/repositories/drizzle-product-repo";
 import { createDrizzleUserRepo } from "../../infrastructure/database/repositories/drizzle-user-repo";
 
+/** Admin dashboard and user management endpoints. */
 export function createAdminController() {
   const orderRepo = createDrizzleOrderRepo();
   const productRepo = createDrizzleProductRepo();

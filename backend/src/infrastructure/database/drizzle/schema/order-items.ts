@@ -2,6 +2,7 @@ import { pgTable, uuid, varchar, numeric, integer, timestamp } from "drizzle-orm
 import { orders } from "./orders";
 import { products } from "./products";
 
+/** Drizzle schema for order_items table (line items). */
 export const orderItems = pgTable("order_items", {
   id: uuid("id").defaultRandom().primaryKey(),
   orderId: uuid("order_id").notNull().references(() => orders.id),

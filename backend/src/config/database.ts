@@ -3,6 +3,7 @@ import postgres from "postgres";
 import { env } from "./env";
 import * as schema from "../infrastructure/database/drizzle/schema";
 
+/** Drizzle ORM instance connected to PostgreSQL via postgres.js driver. */
 const queryClient = postgres(env.databaseUrl);
 export const db = drizzle(queryClient, { schema });
 export type Db = typeof db;

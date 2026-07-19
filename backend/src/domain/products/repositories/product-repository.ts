@@ -10,6 +10,7 @@ export interface ProductFilters {
   sortOrder?: "asc" | "desc";
 }
 
+/** Repository interface for Product persistence. */
 export interface IProductRepository {
   findById(id: string): Promise<ProductWithCategory | null>;
   findBySlug(slug: string): Promise<ProductWithCategory | null>;

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
 import { AppError } from "../../shared/errors/app-error";
 
+/** Global Express error handler. Maps AppError subclasses to HTTP codes. */
 export function errorHandler(
   err: Error,
   _req: Request,

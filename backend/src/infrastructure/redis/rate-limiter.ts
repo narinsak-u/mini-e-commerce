@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { redis } from "../../config/redis";
 
+/** Sliding-window rate limiter using Redis sorted sets. */
 export function rateLimiter(windowSeconds: number, maxRequests: number) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const key = `rate:${req.ip}`;

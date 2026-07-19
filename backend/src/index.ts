@@ -1,3 +1,9 @@
+/**
+ * ShopFlow backend entry point.
+ *
+ * Sets up Express with helmet, CORS, compression, JSON parsing, request logging,
+ * all route modules, global error handler, and background worker startup.
+ */
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";

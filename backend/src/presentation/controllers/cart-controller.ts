@@ -6,6 +6,7 @@ import { updateCartItem } from "../../application/cart/use-cases/update-item";
 import { removeCartItem } from "../../application/cart/use-cases/remove-item";
 import { clearCart } from "../../application/cart/use-cases/clear-cart";
 
+/** Shopping cart CRUD endpoints (Redis-backed). */
 export function createCartController(
   add: ReturnType<typeof addCartItem>,
   get: ReturnType<typeof getCart>,

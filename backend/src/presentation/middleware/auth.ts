@@ -10,6 +10,7 @@ declare module "express-serve-static-core" {
   }
 }
 
+/** JWT authentication middleware. Decodes token, attaches req.user. */
 export function authMiddleware(req: Request, _res: Response, next: NextFunction): void {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) return next(new UnauthorizedError("Missing or invalid token"));

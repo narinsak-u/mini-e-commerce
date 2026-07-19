@@ -6,6 +6,7 @@ import type { IOrderRepository } from "../../../domain/orders/repositories/order
 import type { Order, OrderItem } from "../../../domain/orders/entities/order";
 import type { OrderStatus } from "../../../shared/types";
 
+/** Drizzle implementation of IOrderRepository with pagination. */
 export function createDrizzleOrderRepo(): IOrderRepository {
   return {
     async findById(id: string): Promise<Order | null> {

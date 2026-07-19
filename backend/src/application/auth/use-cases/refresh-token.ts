@@ -7,6 +7,12 @@ const schema = z.object({
   refreshToken: z.string().min(1),
 });
 
+/**
+ * Issues a new access + refresh token pair from a valid refresh token.
+ * 1. Verifies the refresh token signature and expiry → 401 if invalid
+ * 2. Confirms the user still exists in PostgreSQL → 401 if deleted
+ * 3. Returns a fresh token pair
+ */
 export function refreshToken(userRepo: IUserRepository, jwt: IJwtService) {
   return async (input: z.infer<typeof schema>) => {
     const data = schema.parse(input);

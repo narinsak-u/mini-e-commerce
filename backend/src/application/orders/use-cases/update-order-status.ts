@@ -5,6 +5,7 @@ import { NotFoundError } from "../../../shared/errors/app-error";
 
 const schema = z.object({ status: z.enum(["pending", "paid", "packing", "shipping", "completed", "cancelled"]) });
 
+/** Updates order status (admin only). Validates status enum with Zod. */
 export function updateOrderStatusUseCase(orderRepo: IOrderRepository) {
   return async (id: string, input: z.infer<typeof schema>) => {
     const data = schema.parse(input);

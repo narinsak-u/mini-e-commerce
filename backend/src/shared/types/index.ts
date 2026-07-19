@@ -1,3 +1,4 @@
+/** Shared type aliases (Role, OrderStatus). */
 export type Role = "customer" | "admin";
 
 export type OrderStatus =

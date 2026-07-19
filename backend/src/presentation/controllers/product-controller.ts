@@ -9,6 +9,7 @@ import { cacheService } from "../../infrastructure/redis/cache-service";
 
 const PRODUCT_CACHE_TTL = 300;
 
+/** Product CRUD endpoints with search, filter, and pagination. */
 export function createProductController(
   create: ReturnType<typeof createProductUseCase>,
   list: ReturnType<typeof listProductsUseCase>,

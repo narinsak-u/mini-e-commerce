@@ -9,6 +9,7 @@ function cartKey(userId: string): string {
   return `cart:${userId}`;
 }
 
+/** Redis-backed shopping cart repository using hash keys (cart:{userId}). */
 export function createRedisCartRepo(): ICartRepository {
   return {
     async findByUserId(userId: string): Promise<Cart> {

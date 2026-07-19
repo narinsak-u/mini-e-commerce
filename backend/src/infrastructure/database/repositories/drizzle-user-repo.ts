@@ -4,6 +4,7 @@ import { users } from "../drizzle/schema/users";
 import type { IUserRepository } from "../../../domain/auth/repositories/user-repository";
 import type { User } from "../../../domain/auth/entities/user";
 
+/** Drizzle implementation of IUserRepository. */
 export function createDrizzleUserRepo(): IUserRepository {
   return {
     async findByEmail(email: string): Promise<User | null> {

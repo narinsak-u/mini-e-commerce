@@ -5,6 +5,7 @@ import { categories } from "../drizzle/schema/categories";
 import type { IProductRepository, ProductFilters } from "../../../domain/products/repositories/product-repository";
 import type { Product, ProductWithCategory } from "../../../domain/products/entities/product";
 
+/** Drizzle implementation of IProductRepository with search/filter/sort. */
 export function createDrizzleProductRepo(): IProductRepository {
   return {
     async findById(id: string): Promise<ProductWithCategory | null> {

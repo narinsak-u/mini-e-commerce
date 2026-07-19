@@ -9,6 +9,13 @@ const schema = z.object({
   password: z.string().min(1),
 });
 
+/**
+ * Authenticates a user by email + password.
+ * 1. Validates input with Zod
+ * 2. Looks up user by email → 401 if not found
+ * 3. Compares password hash → 401 if mismatch
+ * 4. Returns access + refresh JWT tokens
+ */
 export function loginUser(userRepo: IUserRepository, hasher: IPasswordHasher, jwt: IJwtService) {
   return async (input: z.infer<typeof schema>) => {
     const data = schema.parse(input);

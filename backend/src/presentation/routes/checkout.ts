@@ -8,4 +8,5 @@ import { authMiddleware } from "../middleware/auth";
 const router = Router();
 router.use(authMiddleware);
 router.post("/", createCheckoutController(createOrderUseCase(createDrizzleOrderRepo(), createRedisCartRepo())).checkout);
+/** Checkout route — creates order from cart. Requires authentication. */
 export default router;

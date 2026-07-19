@@ -1,5 +1,6 @@
 import type { Category } from "../entities/category";
 
+/** Repository interface for Category persistence with pagination. */
 export interface PaginatedResult<T> {
   data: T[];
   total: number;

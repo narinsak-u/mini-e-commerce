@@ -12,6 +12,7 @@ const schema = z.object({
   imageUrl: z.string().url().max(500).optional(),
 });
 
+/** Creates a new product with auto-generated slug and 0 default stock. */
 export function createProductUseCase(repo: IProductRepository) {
   return async (input: z.infer<typeof schema>) => {
     const data = schema.parse(input);

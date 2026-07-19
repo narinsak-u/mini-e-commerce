@@ -1,5 +1,16 @@
 import type { Category } from "../../categories/entities/category";
 
+/**
+ * Represents a product in the catalog.
+ *
+ * **Properties:**
+ * - `id` — UUID primary key
+ * - `slug` — URL-friendly unique name (used for lookups)
+ * - `price` — stored as number, mapped to NUMERIC(10,2) in PostgreSQL
+ * - `stock` — current available quantity
+ * - `isActive` — soft-delete flag (deletes set to false)
+ * - `categoryId` — optional FK to categories table
+ */
 export interface Product {
   id: string;
   name: string;
@@ -18,6 +29,7 @@ export interface ProductWithCategory extends Product {
   category?: Category;
 }
 
+/** Creates a new Product with a generated slug from the name. */
 export function createProduct(props: {
   name: string; price: number; description?: string; stock?: number;
   categoryId?: string; imageUrl?: string;
@@ -37,6 +49,7 @@ export function createProduct(props: {
   };
 }
 
+/** Returns a shallow copy of the product with only the given fields changed. */
 export function updateProduct(product: Product, props: {
   name?: string; price?: number; description?: string; stock?: number;
   categoryId?: string | null; imageUrl?: string | null; isActive?: boolean;
@@ -55,11 +68,16 @@ export function updateProduct(product: Product, props: {
   };
 }
 
+/**
+ * Deducts stock by `quantity`. Returns `null` if insufficient stock.
+ * The caller must persist the result via the repository.
+ */
 export function reduceStock(product: Product, quantity: number): Product | null {
   if (product.stock < quantity) return null;
   return { ...product, stock: product.stock - quantity, updatedAt: new Date() };
 }
 
+/** Restores stock by `quantity` (used on cancellation/failure). */
 export function releaseStock(product: Product, quantity: number): Product {
   return { ...product, stock: product.stock + quantity, updatedAt: new Date() };
 }

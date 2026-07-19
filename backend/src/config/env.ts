@@ -1,5 +1,9 @@
 import "dotenv/config";
 
+/**
+ * Environment configuration with sensible defaults for local development.
+ * Override via .env file or environment variables.
+ */
 export const env = {
   nodeEnv: process.env.NODE_ENV || "development",
   port: Number(process.env.PORT) || 3000,

@@ -1,3 +1,4 @@
+/** Schema barrel — re-exports all Drizzle table definitions for migrations and queries. */
 export { users } from "./users";
 export { categories } from "./categories";
 export { products } from "./products";

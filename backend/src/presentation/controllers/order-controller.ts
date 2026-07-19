@@ -5,6 +5,7 @@ import { listUserOrdersUseCase } from "../../application/orders/use-cases/list-u
 import { updateOrderStatusUseCase } from "../../application/orders/use-cases/update-order-status";
 import { cancelOrderUseCase } from "../../application/orders/use-cases/cancel-order";
 
+/** Order listing, detail, status update, and customer cancellation endpoints. */
 export function createOrderController(
   get: ReturnType<typeof getOrderUseCase>,
   list: ReturnType<typeof listUserOrdersUseCase>,

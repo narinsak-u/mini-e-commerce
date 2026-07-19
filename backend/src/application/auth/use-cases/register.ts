@@ -12,6 +12,14 @@ const schema = z.object({
   password: z.string().min(6).max(255),
 });
 
+/**
+ * Registers a new user.
+ * 1. Validates input with Zod (name, email, password ≥ 6 chars)
+ * 2. Checks for duplicate email → 400 ValidationError
+ * 3. Hashes password with bcrypt
+ * 4. Saves user to PostgreSQL
+ * 5. Returns access + refresh JWT tokens
+ */
 export function registerUser(userRepo: IUserRepository, hasher: IPasswordHasher, jwt: IJwtService) {
   return async (input: z.infer<typeof schema>) => {
     const data = schema.parse(input);

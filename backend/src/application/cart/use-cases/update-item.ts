@@ -3,6 +3,7 @@ import type { ICartRepository } from "../../../domain/cart/repositories/cart-rep
 
 const schema = z.object({ quantity: z.number().int().min(0) });
 
+/** Updates the quantity of a product in the user's Redis cart. Sets quantity ≤ 0 → removes the item. */
 export function updateCartItem(cartRepo: ICartRepository) {
   return async (userId: string, productId: string, input: z.infer<typeof schema>) => {
     const data = schema.parse(input);

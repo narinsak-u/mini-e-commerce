@@ -1,6 +1,7 @@
 import type { IOrderRepository } from "../../../domain/orders/repositories/order-repository";
 import { NotFoundError } from "../../../shared/errors/app-error";
 
+/** Fetches a single order by ID. Returns 404 NotFoundError if missing. */
 export function getOrderUseCase(orderRepo: IOrderRepository) {
   return async (id: string) => {
     const order = await orderRepo.findById(id);

@@ -24,4 +24,5 @@ router.patch("/items/:productId", controller.updateItem);
 router.delete("/items/:productId", controller.removeItem);
 router.delete("/", controller.clearCart);
 
+/** Cart routes — CRUD operations on Redis-backed cart. Requires authentication. */
 export default router;

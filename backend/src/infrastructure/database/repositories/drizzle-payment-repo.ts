@@ -4,6 +4,7 @@ import { payments } from "../drizzle/schema/payments";
 import type { IPaymentRepository } from "../../../domain/payments/repositories/payment-repository";
 import type { Payment } from "../../../domain/payments/entities/payment";
 
+/** Drizzle implementation of IPaymentRepository. */
 export function createDrizzlePaymentRepo(): IPaymentRepository {
   return {
     async findByOrderId(orderId: string): Promise<Payment | null> {

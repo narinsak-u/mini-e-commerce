@@ -1,6 +1,7 @@
 import { pgTable, uuid, numeric, varchar, timestamp } from "drizzle-orm/pg-core";
 import { orders } from "./orders";
 
+/** Drizzle schema for payments table. */
 export const payments = pgTable("payments", {
   id: uuid("id").defaultRandom().primaryKey(),
   orderId: uuid("order_id").notNull().unique().references(() => orders.id),

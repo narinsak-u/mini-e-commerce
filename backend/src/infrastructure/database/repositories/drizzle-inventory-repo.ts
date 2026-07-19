@@ -4,6 +4,7 @@ import { inventoryLogs } from "../drizzle/schema/inventory-logs";
 import type { IInventoryRepository } from "../../../domain/inventory/repositories/inventory-repository";
 import type { InventoryLog } from "../../../domain/inventory/entities/inventory-log";
 
+/** Drizzle implementation of IInventoryRepository. */
 export function createDrizzleInventoryRepo(): IInventoryRepository {
   return {
     async save(log: InventoryLog): Promise<void> {

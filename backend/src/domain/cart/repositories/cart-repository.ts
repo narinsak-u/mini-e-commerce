@@ -1,5 +1,7 @@
-import type { Cart, CartItem } from "../entities/cart";
+import type { Cart } from "../entities/cart";
+import type { CartItem } from "../entities/cart";
 
+/** Repository interface for Redis-backed shopping cart. */
 export interface ICartRepository {
   findByUserId(userId: string): Promise<Cart>;
   addItem(userId: string, item: CartItem): Promise<void>;

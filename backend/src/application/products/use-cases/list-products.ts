@@ -10,6 +10,7 @@ const schema = z.object({
   sortOrder: z.enum(["asc", "desc"]).optional(),
 });
 
+/** Paginated product list with optional search, category filter, and price/date sorting. */
 export function listProductsUseCase(repo: IProductRepository) {
   return async (input: z.infer<typeof schema>) => {
     const params = schema.parse(input);

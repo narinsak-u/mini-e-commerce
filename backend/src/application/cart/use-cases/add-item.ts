@@ -5,6 +5,7 @@ import { NotFoundError } from "../../../shared/errors/app-error";
 
 const schema = z.object({ productId: z.string().uuid(), quantity: z.number().int().min(1) });
 
+/** Adds a product to the user's Redis cart. If the product already exists, increments the quantity. */
 export function addCartItem(cartRepo: ICartRepository, productRepo: IProductRepository) {
   return async (userId: string, input: z.infer<typeof schema>) => {
     const data = schema.parse(input);

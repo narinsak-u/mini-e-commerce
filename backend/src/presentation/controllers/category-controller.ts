@@ -9,6 +9,7 @@ import { cacheService } from "../../infrastructure/redis/cache-service";
 const CACHE_KEY = "categories:all";
 const CACHE_TTL = 600;
 
+/** Category CRUD endpoints. */
 export function createCategoryController(
   create: ReturnType<typeof createCategoryUseCase>,
   list: ReturnType<typeof listCategoriesUseCase>,

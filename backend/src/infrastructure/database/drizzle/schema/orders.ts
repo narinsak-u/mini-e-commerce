@@ -1,6 +1,7 @@
 import { pgTable, uuid, numeric, timestamp, pgEnum } from "drizzle-orm/pg-core";
 import { users } from "./users";
 
+/** Drizzle schema for orders table with status enum. */
 export const orderStatusEnum = pgEnum("order_status", ["pending", "paid", "packing", "shipping", "completed", "cancelled"]);
 
 export const orders = pgTable("orders", {

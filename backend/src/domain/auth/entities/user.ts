@@ -1,24 +1,28 @@
-import type { Role } from "../../../shared/types";
-
+/**
+ * Represents a registered user in the system.
+ *
+ * **Properties:**
+ * - `id` — UUID primary key
+ * - `email` — unique login identifier
+ * - `passwordHash` — bcrypt hash, never stored in plaintext
+ * - `name` — display name
+ * - `role` — `"customer"` or `"admin"`, used by RBAC middleware
+ * - `createdAt` / `updatedAt` — timestamps
+ */
 export interface User {
   id: string;
   email: string;
   passwordHash: string;
   name: string;
-  role: Role;
+  role: "customer" | "admin";
   createdAt: Date;
   updatedAt: Date;
 }
 
-export function createUser(props: {
-  id: string;
-  email: string;
-  passwordHash: string;
-  name: string;
-  role?: Role;
-}): User {
+/** Creates a new User entity with a random UUID and current timestamps. */
+export function createUser(props: { email: string; passwordHash: string; name: string; role?: "customer" | "admin" }): User {
   return {
-    id: props.id,
+    id: crypto.randomUUID(),
     email: props.email,
     passwordHash: props.passwordHash,
     name: props.name,

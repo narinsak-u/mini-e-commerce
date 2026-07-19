@@ -18,4 +18,5 @@ router.get("/:id", controller.getById);
 router.patch("/:id", rbacMiddleware("admin"), controller.updateStatus);
 router.post("/:id/cancel", controller.cancelOrder);
 
+/** Order routes — list, detail, admin status update, customer cancel. Requires authentication. */
 export default router;
