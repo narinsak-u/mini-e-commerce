@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { randomUUID } from "node:crypto";
 import { createUser } from "../../../domain/auth/entities/user";
 import type { IUserRepository } from "../../../domain/auth/repositories/user-repository";
 import type { IJwtService } from "../interfaces/jwt-service";
@@ -29,7 +28,6 @@ export function registerUser(userRepo: IUserRepository, hasher: IPasswordHasher,
 
     const passwordHash = await hasher.hash(data.password);
     const user = createUser({
-      id: randomUUID(),
       email: data.email,
       passwordHash,
       name: data.name,

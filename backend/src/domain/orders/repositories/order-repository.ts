@@ -1,5 +1,5 @@
 import type { Order, OrderItem } from "../entities/order";
-import type { OrderStatus } from "../../shared/types";
+import type { OrderStatus } from "../../../shared/types";
 import type { PaginatedResult } from "../../categories/repositories/category-repository";
 
 /** Repository interface for Order + OrderItem persistence. */

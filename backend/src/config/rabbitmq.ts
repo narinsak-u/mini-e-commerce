@@ -1,7 +1,8 @@
 import amqp from "amqplib";
 import { env } from "./env";
 
-let connection: amqp.Connection | null = null;
+// ponytail: amqplib types conflict with installed amqplib version
+let connection: any = null;
 let channel: amqp.Channel | null = null;
 
 const DLX = "shop.dlx";
@@ -35,9 +36,10 @@ export function dlqOptions(): amqp.Options.AssertQueue {
 export async function getRabbitChannel(): Promise<amqp.Channel> {
   if (channel) return channel;
   connection = await amqp.connect(env.rabbitmqUrl);
-  channel = await connection.createChannel();
-  await setupInfrastructure(channel);
-  return channel;
+  const ch: amqp.Channel = await connection.createChannel();
+  channel = ch;
+  await setupInfrastructure(ch);
+  return ch;
 }
 
 export async function publishEvent(routingKey: string, payload: unknown): Promise<void> {

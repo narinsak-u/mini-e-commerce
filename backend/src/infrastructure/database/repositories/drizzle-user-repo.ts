@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 import { db } from "../../../config/database";
 import { users } from "../drizzle/schema/users";
 import type { IUserRepository } from "../../../domain/auth/repositories/user-repository";
@@ -27,6 +27,17 @@ export function createDrizzleUserRepo(): IUserRepository {
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       });
+    },
+    async updateRole(id: string, role: "customer" | "admin"): Promise<void> {
+      await db.update(users).set({ role, updatedAt: new Date() }).where(eq(users.id, id));
+    },
+    async findAll(page = 1, limit = 10) {
+      const offset = (page - 1) * limit;
+      const [rows, totalResult] = await Promise.all([
+        db.select().from(users).limit(limit).offset(offset),
+        db.select({ value: count() }).from(users),
+      ]);
+      return { data: rows.map(rowToUser), total: Number(totalResult[0].value) };
     },
   };
 }

@@ -1,4 +1,4 @@
-import type { OrderStatus } from "../../shared/types";
+import type { OrderStatus } from "../../../shared/types";
 
 /**
  * Represents a customer order.

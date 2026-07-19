@@ -6,10 +6,10 @@ import type { IJwtService, TokenPayload } from "../../application/auth/interface
 export function createJwtService(): IJwtService {
   return {
     signAccessToken(payload: TokenPayload): string {
-      return jwt.sign(payload, env.jwtSecret, { expiresIn: env.jwtExpiresIn });
+      return jwt.sign(payload, env.jwtSecret, { expiresIn: env.jwtExpiresIn } as jwt.SignOptions);
     },
     signRefreshToken(payload: TokenPayload): string {
-      return jwt.sign(payload, env.jwtSecret, { expiresIn: env.jwtRefreshExpiresIn });
+      return jwt.sign(payload, env.jwtSecret, { expiresIn: env.jwtRefreshExpiresIn } as jwt.SignOptions);
     },
     verify(token: string): TokenPayload {
       return jwt.verify(token, env.jwtSecret) as TokenPayload;

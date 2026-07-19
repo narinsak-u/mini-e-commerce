@@ -15,16 +15,16 @@ export function createDrizzleOrderRepo(): IOrderRepository {
       const itemRows = await db.select().from(orderItems).where(eq(orderItems.orderId, id));
       return rowToOrder(rows[0], itemRows);
     },
-    async findByUserId(userId: string, page = 1, limit = 10) {
+    async findByUserId(userId: string, page: number, limit: number) {
       const offset = (page - 1) * limit;
       const [rows, totalResult] = await Promise.all([
         db.select().from(orders).where(eq(orders.userId, userId)).orderBy(desc(orders.createdAt)).limit(limit).offset(offset),
         db.select({ value: count() }).from(orders).where(eq(orders.userId, userId)),
       ]);
       const data = await Promise.all(rows.map(async r => { const items = await db.select().from(orderItems).where(eq(orderItems.orderId, r.id)); return rowToOrder(r, items); }));
-      return { data, total: Number(totalResult[0].value) };
+      return { data, total: Number(totalResult[0].value), page, limit };
     },
-    async findAll(page = 1, limit = 10, status?: OrderStatus) {
+    async findAll(page: number, limit: number, status?: OrderStatus) {
       const offset = (page - 1) * limit;
       const conditions = status ? [eq(orders.status, status)] : [];
       const [rows, totalResult] = await Promise.all([
@@ -32,7 +32,7 @@ export function createDrizzleOrderRepo(): IOrderRepository {
         db.select({ value: count() }).from(orders).where(and(...conditions)),
       ]);
       const data = await Promise.all(rows.map(async r => { const items = await db.select().from(orderItems).where(eq(orderItems.orderId, r.id)); return rowToOrder(r, items); }));
-      return { data, total: Number(totalResult[0].value) };
+      return { data, total: Number(totalResult[0].value), page, limit };
     },
     async save(order: Order) {
       await db.insert(orders).values({ id: order.id, userId: order.userId, status: order.status, totalAmount: String(order.totalAmount), createdAt: order.createdAt, updatedAt: order.updatedAt });

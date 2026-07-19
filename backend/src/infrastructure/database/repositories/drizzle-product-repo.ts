@@ -44,7 +44,7 @@ export function createDrizzleProductRepo(): IProductRepository {
   };
 }
 
-function rowToProductWithCategory(row: typeof products.$inferSelect & { categories?: typeof categories.$inferSelect | null }): ProductWithCategory {
+function rowToProductWithCategory(row: { products: typeof products.$inferSelect; categories: typeof categories.$inferSelect | null }): ProductWithCategory {
   return {
     id: row.products.id, name: row.products.name, slug: row.products.slug, description: row.products.description,
     price: Number(row.products.price), stock: row.products.stock, categoryId: row.products.categoryId,
