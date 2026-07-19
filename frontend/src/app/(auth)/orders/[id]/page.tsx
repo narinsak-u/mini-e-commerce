@@ -29,8 +29,8 @@ export default async function OrderDetailPage({ params: paramsPromise }: { param
       <Card>
         <CardHeader><CardTitle>Items</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          {order.items.map((item, i) => (
-            <div key={`${item.productName}-${i}`}>
+          {order.items.map((item) => (
+            <div key={item.productName}>
               <div className="flex justify-between"><span>{item.productName} × {item.quantity}</span><span>${Number(item.subtotal).toFixed(2)}</span></div>
               <Separator />
             </div>
