@@ -8,7 +8,7 @@ interface Product { id: string; name: string; price: number; stock: number; isAc
 
 export default async function AdminProductsPage() {
   let products: Product[] = [];
-  try { const res = await api<{ data: Product[] }>("/products"); products = res.data; } catch { console.error("Failed to load products"); }
+  try { const res = await api<{ data: Product[] }>("/products"); products = res.data; } catch (e) { console.error("Failed to load products", e); }
 
   return (
     <div>

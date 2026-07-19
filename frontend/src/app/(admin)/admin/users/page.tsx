@@ -6,7 +6,7 @@ interface User { id: string; name: string; email: string; role: string }
 
 export default async function AdminUsersPage() {
   let users: User[] = [];
-  try { const res = await api<{ data: User[] }>("/admin/users"); users = res.data; } catch { console.error("Failed to load users"); }
+  try { const res = await api<{ data: User[] }>("/admin/users"); users = res.data; } catch (e) { console.error("Failed to load users", e); }
 
   return (
     <div>

@@ -10,7 +10,7 @@ export default async function NotificationsPage() {
   const session = await getSession();
   if (!session) redirect("/auth/login");
   let notifications: Notification[] = [];
-  try { const res = await api<{ data: Notification[] }>("/notifications"); notifications = res.data; } catch { console.error("Failed to load notifications"); }
+  try { const res = await api<{ data: Notification[] }>("/notifications"); notifications = res.data; } catch (e) { console.error("Failed to load notifications", e); }
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">

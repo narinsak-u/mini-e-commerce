@@ -5,7 +5,7 @@ interface Category { id: string; name: string }
 
 export default async function AdminNewProductPage() {
   let categories: Category[] = [];
-  try { const res = await api<{ data: Category[] }>("/categories"); categories = res.data; } catch {}
+  try { const res = await api<{ data: Category[] }>("/categories"); categories = res.data; } catch (e) { console.error("Failed to load categories", e); }
 
   return (
     <div>

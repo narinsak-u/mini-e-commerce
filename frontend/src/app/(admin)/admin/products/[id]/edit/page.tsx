@@ -10,7 +10,7 @@ export default async function AdminEditProductPage({ params: paramsPromise }: { 
   let product: Product;
   try { product = await api<Product>(`/products/${id}`); } catch { notFound(); }
   let categories: Category[] = [];
-  try { const res = await api<{ data: Category[] }>("/categories"); categories = res.data; } catch {}
+  try { const res = await api<{ data: Category[] }>("/categories"); categories = res.data; } catch (e) { console.error("Failed to load categories", e); }
 
   return (
     <div>
