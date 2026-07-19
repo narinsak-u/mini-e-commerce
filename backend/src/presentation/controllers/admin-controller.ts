@@ -29,7 +29,8 @@ export function createAdminController() {
       res.json(await listUsers());
     }),
     updateUserRole: asyncHandler(async (req: Request, res: Response) => {
-      res.json(await updateRole(req.params.id, req.body));
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      res.json(await updateRole(id, req.body));
     }),
   };
 }

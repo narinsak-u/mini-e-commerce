@@ -22,10 +22,12 @@ export function createCartController(
       res.json(await add(req.user!.sub, req.body));
     }),
     updateItem: asyncHandler(async (req: Request, res: Response) => {
-      res.json(await update(req.user!.sub, req.params.productId, req.body));
+      const productId = Array.isArray(req.params.productId) ? req.params.productId[0] : req.params.productId;
+      res.json(await update(req.user!.sub, productId, req.body));
     }),
     removeItem: asyncHandler(async (req: Request, res: Response) => {
-      res.json(await remove(req.user!.sub, req.params.productId));
+      const productId = Array.isArray(req.params.productId) ? req.params.productId[0] : req.params.productId;
+      res.json(await remove(req.user!.sub, productId));
     }),
     clearCart: asyncHandler(async (req: Request, res: Response) => {
       res.json(await clear(req.user!.sub));

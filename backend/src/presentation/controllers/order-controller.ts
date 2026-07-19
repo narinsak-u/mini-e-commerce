@@ -14,16 +14,19 @@ export function createOrderController(
 ) {
   return {
     getById: asyncHandler(async (req: Request, res: Response) => {
-      res.json(await get(req.params.id));
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      res.json(await get(id));
     }),
     listMyOrders: asyncHandler(async (req: Request, res: Response) => {
       res.json(await list(req.user!.sub, Number(req.query.page) || 1, Number(req.query.limit) || 10));
     }),
     updateStatus: asyncHandler(async (req: Request, res: Response) => {
-      res.json(await updateStatus(req.params.id, req.body));
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      res.json(await updateStatus(id, req.body));
     }),
     cancelOrder: asyncHandler(async (req: Request, res: Response) => {
-      res.json(await cancel(req.params.id, req.user!.sub));
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      res.json(await cancel(id, req.user!.sub));
     }),
   };
 }
