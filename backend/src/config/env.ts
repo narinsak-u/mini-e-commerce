@@ -6,7 +6,7 @@ import "dotenv/config";
  */
 export const env = {
   nodeEnv: process.env.NODE_ENV || "development",
-  port: Number(process.env.PORT) || 3000,
+  port: Number(process.env.PORT) || 4000,
   databaseUrl: process.env.DATABASE_URL || "postgres://shopflow:shopflow@localhost:5432/shopflow",
   redisUrl: process.env.REDIS_URL || "redis://localhost:6379",
   rabbitmqUrl: process.env.RABBITMQ_URL || "amqp://guest:guest@localhost:5672",

@@ -8,7 +8,7 @@ const options: swaggerJsdoc.Options = {
       version: "1.0.0",
       description: "Mini e-commerce backend with Clean Architecture, event-driven order processing, and RabbitMQ workers.",
     },
-    servers: [{ url: "http://localhost:3000", description: "Development" }],
+    servers: [{ url: "http://localhost:4000", description: "Development" }],
     components: {
       securitySchemes: {
         bearerAuth: {

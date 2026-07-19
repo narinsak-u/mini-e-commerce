@@ -70,7 +70,8 @@ cd ../backend && npx drizzle-kit migrate
 npm run dev
 ```
 
-The server starts on `http://localhost:3000`.
+The server starts on `http://localhost:4000`.
+API docs (Swagger UI) at `http://localhost:4000/docs`.
 
 ### Docker Services
 
