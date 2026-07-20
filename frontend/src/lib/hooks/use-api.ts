@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, setClientToken } from "@/lib/api";
 import { toast } from "sonner";
 
 // ── Shared types ──────────────────────────────────────────────
@@ -256,6 +256,7 @@ export function useLogin() {
         body: JSON.stringify({ email, password }),
       }),
     onSuccess: async (res) => {
+      setClientToken(res.accessToken);
       await fetch("/api/auth/set-cookie", {
         method: "POST",
         body: JSON.stringify({ token: res.accessToken }),
@@ -278,6 +279,7 @@ export function useRegister() {
         body: JSON.stringify({ name, email, password }),
       }),
     onSuccess: async (res) => {
+      setClientToken(res.accessToken);
       await fetch("/api/auth/set-cookie", {
         method: "POST",
         body: JSON.stringify({ token: res.accessToken }),

@@ -1,12 +1,26 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Bell, User, LogOut, LayoutDashboard } from "lucide-react";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, useCartStore } from "@/lib/store";
+import { setClientToken } from "@/lib/api";
 
 export function NavBar() {
   const session = useAuthStore((s) => s.session);
+  const setSession = useAuthStore((s) => s.setSession);
+  const setItemCount = useCartStore((s) => s.setItemCount);
+  const router = useRouter();
+
+  async function handleLogout() {
+    setClientToken(null);
+    setSession(null);
+    setItemCount(0);
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">
@@ -21,7 +35,7 @@ export function NavBar() {
               <Link href="/notifications"><Button variant="ghost" size="icon"><Bell className="h-5 w-5 hover:text-primary transition-colors" /></Button></Link>
               <Link href="/orders"><Button variant="ghost" size="icon"><User className="h-5 w-5 hover:text-primary transition-colors" /></Button></Link>
               {session.role === "admin" && <Link href="/admin/dashboard"><Button variant="ghost" size="icon"><LayoutDashboard className="h-5 w-5 hover:text-primary transition-colors" /></Button></Link>}
-              <form action="/api/auth/logout" method="post"><Button variant="ghost" size="icon" type="submit"><LogOut className="h-5 w-5 hover:text-primary transition-colors" /></Button></form>
+              <Button variant="ghost" size="icon" onClick={handleLogout}><LogOut className="h-5 w-5 hover:text-primary transition-colors" /></Button>
             </>
           ) : (
             <>

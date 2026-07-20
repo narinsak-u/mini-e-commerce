@@ -11,12 +11,16 @@ export interface SessionInfo {
 
 interface AuthState {
   session: SessionInfo | null;
+  token: string | null;
   setSession: (session: SessionInfo | null) => void;
+  setToken: (token: string | null) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   session: null,
+  token: null,
   setSession: (session) => set({ session }),
+  setToken: (token) => set({ token }),
 }));
 
 // ── Cart UI state ─────────────────────────────────────────────
