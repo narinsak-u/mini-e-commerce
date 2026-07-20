@@ -14,7 +14,7 @@ interface ProductCardProps {
 export function ProductCard({ id, name, price, imageUrl, category }: ProductCardProps) {
   return (
     <Link href={`/products/${id}`}>
-      <Card className="overflow-hidden transition-shadow hover:shadow-md">
+      <Card className="overflow-hidden border-stone-200 shadow-sm transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
         <div className="aspect-square bg-muted flex items-center justify-center text-muted-foreground">
           {imageUrl ? <Image src={imageUrl} alt={name} width={400} height={400} className="object-cover w-full h-full" /> : <span className="text-4xl">📦</span>}
         </div>
@@ -23,7 +23,7 @@ export function ProductCard({ id, name, price, imageUrl, category }: ProductCard
           {category && <Badge variant="secondary" className="mt-1">{category.name}</Badge>}
         </CardContent>
         <CardFooter className="p-4 pt-0">
-          <p className="text-lg font-semibold">${Number(price).toFixed(2)}</p>
+          <p className="text-lg font-semibold text-stone-800">${Number(price).toFixed(2)}</p>
         </CardFooter>
       </Card>
     </Link>
