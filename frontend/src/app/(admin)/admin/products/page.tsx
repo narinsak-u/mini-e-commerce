@@ -16,14 +16,14 @@ export default async function AdminProductsPage() {
         <h1 className="text-3xl font-bold">Products</h1>
         <Link href="/admin/products/new"><Button>New Product</Button></Link>
       </div>
-      <Card>
+      <Card className="shadow-sm border-stone-200">
         <CardHeader><CardTitle>All Products</CardTitle></CardHeader>
         <CardContent>
           <table className="w-full text-sm">
-            <thead><tr className="border-b text-left"><th className="pb-3 font-medium">Name</th><th className="pb-3 font-medium">Price</th><th className="pb-3 font-medium">Stock</th><th className="pb-3 font-medium">Status</th><th className="pb-3 font-medium"></th></tr></thead>
+            <thead><tr className="border-b text-left bg-stone-50"><th className="pb-3 font-medium">Name</th><th className="pb-3 font-medium">Price</th><th className="pb-3 font-medium">Stock</th><th className="pb-3 font-medium">Status</th><th className="pb-3 font-medium"></th></tr></thead>
             <tbody>
               {products.map((p) => (
-                <tr key={p.id} className="border-b">
+                <tr key={p.id} className="border-b even:bg-stone-50">
                   <td className="py-3">{p.name}</td>
                   <td className="py-3">{"$" + Number(p.price).toFixed(2)}</td>
                   <td className="py-3">{p.stock}</td>

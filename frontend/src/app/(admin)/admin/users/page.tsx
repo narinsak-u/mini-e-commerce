@@ -11,12 +11,12 @@ export default async function AdminUsersPage() {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6">Users</h1>
-      <Card>
+      <Card className="shadow-sm border-stone-200">
         <CardHeader><CardTitle>All Users</CardTitle></CardHeader>
         <CardContent>
           <table className="w-full text-sm">
-            <thead><tr className="border-b text-left"><th className="pb-3 font-medium">Name</th><th className="pb-3 font-medium">Email</th><th className="pb-3 font-medium">Role</th></tr></thead>
-            <tbody>{users.map((u) => (<tr key={u.id} className="border-b"><td className="py-3">{u.name}</td><td className="py-3">{u.email}</td><td className="py-3"><Badge variant={u.role === "admin" ? "default" : "secondary"}>{u.role}</Badge></td></tr>))}</tbody>
+            <thead><tr className="border-b text-left bg-stone-50"><th className="pb-3 font-medium">Name</th><th className="pb-3 font-medium">Email</th><th className="pb-3 font-medium">Role</th></tr></thead>
+            <tbody>{users.map((u) => (<tr key={u.id} className="border-b even:bg-stone-50"><td className="py-3">{u.name}</td><td className="py-3">{u.email}</td><td className="py-3"><Badge variant={u.role === "admin" ? "default" : "secondary"}>{u.role}</Badge></td></tr>))}</tbody>
           </table>
         </CardContent>
       </Card>

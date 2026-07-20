@@ -11,12 +11,12 @@ export default async function AdminDashboardPage() {
     <div>
       <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card><CardHeader><CardTitle className="text-sm text-muted-foreground">Total Revenue</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">${dashboard.revenue.toFixed(2)}</p></CardContent></Card>
-        <Card><CardHeader><CardTitle className="text-sm text-muted-foreground">Total Orders</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{dashboard.totalOrders}</p></CardContent></Card>
-        <Card><CardHeader><CardTitle className="text-sm text-muted-foreground">Today&#39;s Revenue</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">${dashboard.dailyRevenue.toFixed(2)}</p></CardContent></Card>
+        <Card className="shadow-sm border-stone-200"><CardHeader><CardTitle className="text-sm text-muted-foreground">Total Revenue</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">${dashboard.revenue.toFixed(2)}</p></CardContent></Card>
+        <Card className="shadow-sm border-stone-200"><CardHeader><CardTitle className="text-sm text-muted-foreground">Total Orders</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{dashboard.totalOrders}</p></CardContent></Card>
+        <Card className="shadow-sm border-stone-200"><CardHeader><CardTitle className="text-sm text-muted-foreground">Today&#39;s Revenue</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">${dashboard.dailyRevenue.toFixed(2)}</p></CardContent></Card>
       </div>
       {dashboard.bestSellers.length > 0 && (
-        <Card className="mt-8">
+        <Card className="mt-8 shadow-sm border-stone-200">
           <CardHeader><CardTitle>Best Sellers</CardTitle></CardHeader>
           <CardContent>
             <ul className="space-y-2">

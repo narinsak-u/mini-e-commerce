@@ -11,12 +11,12 @@ export default async function AdminOrdersPage() {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6">Orders</h1>
-      <Card>
+      <Card className="shadow-sm border-stone-200">
         <CardHeader><CardTitle>All Orders</CardTitle></CardHeader>
         <CardContent>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b text-left">
+              <tr className="border-b text-left bg-stone-50">
                 <th className="pb-3 font-medium">ID</th>
                 <th className="pb-3 font-medium">Status</th>
                 <th className="pb-3 font-medium">Total</th>
@@ -25,7 +25,7 @@ export default async function AdminOrdersPage() {
             </thead>
             <tbody>
               {orders.map((o) => (
-                <tr key={o.id} className="border-b">
+                <tr key={o.id} className="border-b even:bg-stone-50">
                   <td className="py-3 font-mono">{o.id.slice(0, 8)}</td>
                   <td className="py-3"><OrderStatusSelect orderId={o.id} currentStatus={o.status} /></td>
                   <td className="py-3">{"$" + Number(o.totalAmount).toFixed(2)}</td>
