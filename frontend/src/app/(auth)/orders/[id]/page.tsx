@@ -217,7 +217,7 @@ export default async function OrderDetailPage({
           <Badge variant={statusBadgeVariant(order.status)} className="capitalize text-xs px-3 py-1 h-auto">
             {order.status}
           </Badge>
-          {order.status === "pending" && (
+        {["pending", "paid"].includes(order.status) && (
             <CancelOrderButton orderId={order.id} disabled={false} />
           )}
         </div>

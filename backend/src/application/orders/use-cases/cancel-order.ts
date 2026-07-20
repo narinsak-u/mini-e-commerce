@@ -9,7 +9,7 @@ export function cancelOrderUseCase(orderRepo: IOrderRepository) {
     const order = await orderRepo.findById(orderId);
     if (!order) throw new NotFoundError("Order");
     if (order.userId !== userId) throw new ForbiddenError("Not your order");
-    if (order.status !== "pending") throw new ValidationError("Only pending orders can be cancelled");
+    if (!["pending", "paid"].includes(order.status)) throw new ValidationError("Only pending or paid orders can be cancelled");
     await orderRepo.updateStatus(orderId, "cancelled");
     return orderRepo.findById(orderId);
   };
