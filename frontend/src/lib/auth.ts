@@ -6,8 +6,13 @@ export interface Session {
   role: string;
 }
 
-export const getSession = cache(async (): Promise<Session | null> => {
+export const getToken = cache(async (): Promise<string | null> => {
   const token = (await cookies()).get("token")?.value;
+  return token ?? null;
+});
+
+export const getSession = cache(async (): Promise<Session | null> => {
+  const token = await getToken();
   if (!token) return null;
   try {
     const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());

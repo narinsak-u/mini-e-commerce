@@ -2,18 +2,20 @@
 
 import { useEffect } from "react";
 import { useAuthStore, type SessionInfo } from "@/lib/store";
+import { setClientToken } from "@/lib/api";
 
 /**
  * Hydrates the Zustand auth store with session data from the server layout.
- * Render alongside NavBar so client components can read session without prop drilling.
+ * Also restores the JWT token for client-side API requests on page refresh.
  */
-export function SessionSync({ session }: { session: SessionInfo | null }) {
+export function SessionSync({ session, token }: { session: SessionInfo | null; token?: string | null }) {
   const setSession = useAuthStore((s) => s.setSession);
 
   useEffect(() => {
     setSession(session);
+    if (token) setClientToken(token);
     // ponytail: object reference changes every navigation; narrow to stable sub field
-  }, [session?.sub, setSession]);
+  }, [session?.sub, token, setSession]);
 
   return null;
 }
