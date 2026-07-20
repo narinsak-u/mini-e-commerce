@@ -15,13 +15,23 @@ const links = [
 export function AdminSidebar() {
   const pathname = usePathname();
   return (
-    <aside className="w-64 border-r min-h-screen p-4">
-      <Link href="/" className="text-xl font-semibold block mb-8">ShopFlow Admin</Link>
+    <aside className="w-64 bg-sidebar text-sidebar-foreground min-h-screen p-4 border-r border-sidebar-border">
+      <Link href="/" className="text-xl font-semibold block mb-8 text-sidebar-foreground">ShopFlow Admin</Link>
       <nav className="space-y-1">
         {links.map((link) => {
           const Icon = link.icon;
+          const active = pathname === link.href;
           return (
-            <Link key={link.href} href={link.href} className={cn("flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors", pathname === link.href ? "bg-emerald-50 text-emerald-700 border-r-2 border-emerald-600" : "hover:bg-stone-100")}>
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                active
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-sidebar-primary"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              )}
+            >
               <Icon className="h-4 w-4" />
               {link.label}
             </Link>

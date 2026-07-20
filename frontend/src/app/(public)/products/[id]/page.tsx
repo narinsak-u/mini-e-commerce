@@ -23,7 +23,7 @@ export default async function ProductDetailPage({ params: paramsPromise }: { par
           <p className="text-3xl font-semibold mt-4">${Number(product.price).toFixed(2)}</p>
           <p className="text-muted-foreground mt-4">{product.description || "No description available."}</p>
           <div className="mt-4 text-sm">
-            {product.stock > 0 ? <span className="text-green-600">In stock ({product.stock} available)</span> : <span className="text-red-600">Out of stock</span>}
+            {product.stock > 0 ? <span className="text-accent font-medium">In stock ({product.stock} available)</span> : <span className="text-destructive font-medium">Out of stock</span>}
           </div>
           <AddToCartButton productId={product.id} disabled={product.stock === 0} />
         </div>
