@@ -16,12 +16,12 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ product, categories }: ProductFormProps) {
-  const [name, setName] = useState(product?.name ?? "");
-  const [price, setPrice] = useState(String(product?.price ?? ""));
-  const [description, setDescription] = useState(product?.description ?? "");
-  const [stock, setStock] = useState(String(product?.stock ?? ""));
-  const [imageUrl, setImageUrl] = useState(product?.imageUrl ?? "");
-  const [categoryId, setCategoryId] = useState(product?.categoryId ?? "");
+  const [name, setName] = useState(() => product?.name ?? "");
+  const [price, setPrice] = useState(() => String(product?.price ?? ""));
+  const [description, setDescription] = useState(() => product?.description ?? "");
+  const [stock, setStock] = useState(() => String(product?.stock ?? ""));
+  const [imageUrl, setImageUrl] = useState(() => product?.imageUrl ?? "");
+  const [categoryId, setCategoryId] = useState(() => product?.categoryId ?? "");
   const router = useRouter();
   const saveProduct = useSaveProduct();
 

@@ -11,11 +11,9 @@ interface Order { id: string; status: string; totalAmount: number; createdAt: st
 
 export default async function OrderDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const { id } = await paramsPromise;
-  const [session, order] = await Promise.all([
-    getSession(),
-    api<Order>(`/orders/${id}`).catch(() => { notFound(); }),
-  ]);
+  const session = await getSession();
   if (!session) redirect("/auth/login");
+  const order = await api<Order>(`/orders/${id}`).catch(() => { notFound(); return undefined as never; });
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">

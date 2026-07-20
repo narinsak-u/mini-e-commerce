@@ -21,7 +21,7 @@ export default async function CategoriesPage() {
               <Card className="transition-shadow hover:shadow-md h-full">
                 <CardContent className="p-6">
                   <h2 className="text-lg font-semibold mb-1">{cat.name}</h2>
-                  {cat.description && <p className="text-sm text-muted-foreground">{cat.description}</p>}
+                  {cat.description ? <p className="text-sm text-muted-foreground">{cat.description}</p> : null}
                   <Badge variant="outline" className="mt-3">Browse →</Badge>
                 </CardContent>
               </Card>

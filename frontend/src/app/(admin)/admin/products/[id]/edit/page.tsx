@@ -7,10 +7,13 @@ interface Product { id: string; name: string; price: number; description: string
 
 export default async function AdminEditProductPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const { id } = await paramsPromise;
-  let product: Product;
-  try { product = await api<Product>(`/products/${id}`); } catch { notFound(); }
-  let categories: Category[] = [];
-  try { const res = await api<{ data: Category[] }>("/categories"); categories = res.data; } catch (e) { console.error("Failed to load categories", e); }
+  const [productResult, categoriesResult] = await Promise.all([
+    api<Product>(`/products/${id}`).catch(() => null),
+    api<{ data: Category[] }>("/categories").catch(() => ({ data: [] })),
+  ]);
+  if (!productResult) notFound();
+  const product = productResult;
+  const categories = categoriesResult.data;
 
   return (
     <div>

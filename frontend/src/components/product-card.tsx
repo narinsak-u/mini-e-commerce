@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { memo } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -11,7 +12,7 @@ interface ProductCardProps {
   category?: { name: string };
 }
 
-export function ProductCard({ id, name, price, imageUrl, category }: ProductCardProps) {
+export const ProductCard = memo(function ProductCard({ id, name, price, imageUrl, category }: ProductCardProps) {
   return (
     <Link href={`/products/${id}`}>
       <Card className="overflow-hidden border-stone-200 shadow-sm transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
@@ -28,4 +29,4 @@ export function ProductCard({ id, name, price, imageUrl, category }: ProductCard
       </Card>
     </Link>
   );
-}
+});

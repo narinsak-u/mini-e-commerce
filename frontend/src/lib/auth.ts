@@ -1,11 +1,12 @@
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 export interface Session {
   sub: string;
   role: string;
 }
 
-export async function getSession(): Promise<Session | null> {
+export const getSession = cache(async (): Promise<Session | null> => {
   const token = (await cookies()).get("token")?.value;
   if (!token) return null;
   try {
@@ -15,7 +16,7 @@ export async function getSession(): Promise<Session | null> {
   } catch {
     return null;
   }
-}
+});
 
 export async function isAdmin(): Promise<boolean> {
   return (await getSession())?.role === "admin";

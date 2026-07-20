@@ -12,7 +12,8 @@ export function SessionSync({ session }: { session: SessionInfo | null }) {
 
   useEffect(() => {
     setSession(session);
-  }, [session, setSession]);
+    // ponytail: object reference changes every navigation; narrow to stable sub field
+  }, [session?.sub, setSession]);
 
   return null;
 }
