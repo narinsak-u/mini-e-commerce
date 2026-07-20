@@ -23,6 +23,7 @@ import adminRoutes from "./presentation/routes/admin";
 import { requestLogger } from "./presentation/middleware/request-logger";
 import { startWorkers } from "./infrastructure/workers";
 import { closeRabbit } from "./config/rabbitmq";
+import { seed } from "./db/seed";
 
 const app = express();
 
@@ -52,8 +53,9 @@ app.use("/admin", adminRoutes);
 
 app.use(errorHandler);
 
-app.listen(env.port, () => {
+app.listen(env.port, async () => {
   console.log(`Server running on port ${env.port}`);
+  await seed().catch(console.error);
   startWorkers().catch(console.error);
 });
 
