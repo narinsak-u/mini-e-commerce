@@ -3,6 +3,7 @@ import { api } from "@/lib/api";
 import { notFound } from "next/navigation";
 import { AddToCartButton } from "@/components/add-to-cart-button";
 import { Badge } from "@/components/ui/badge";
+import { Star } from "lucide-react";
 
 interface Product { id: string; name: string; description: string | null; price: number; stock: number; imageUrl: string | null; category?: { name: string } }
 
@@ -20,10 +21,24 @@ export default async function ProductDetailPage({ params: paramsPromise }: { par
         <div>
           <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
           {product.category && <Badge variant="secondary">{product.category.name}</Badge>}
-          <p className="text-3xl font-semibold mt-4">${Number(product.price).toFixed(2)}</p>
+          <div className="flex items-center gap-2 mt-3">
+            {Array.from({ length: 5 }, (_, i) => (
+              <Star key={i} className={`size-4 ${i < 4 ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+            ))}
+            <Badge variant="ghost" className="ml-1 text-xs">128 reviews</Badge>
+          </div>
+          <p className="text-3xl font-bold text-primary mt-4">${Number(product.price).toFixed(2)}</p>
           <p className="text-muted-foreground mt-4">{product.description || "No description available."}</p>
-          <div className="mt-4 text-sm">
-            {product.stock > 0 ? <span className="text-accent font-medium">In stock ({product.stock} available)</span> : <span className="text-destructive font-medium">Out of stock</span>}
+          <div className="mt-4">
+            {product.stock > 0 ? (
+              <Badge variant="default" className="text-sm h-6 px-3">
+                In stock ({product.stock} available)
+              </Badge>
+            ) : (
+              <Badge variant="destructive" className="text-sm h-6 px-3">
+                Out of stock
+              </Badge>
+            )}
           </div>
           <AddToCartButton productId={product.id} disabled={product.stock === 0} />
         </div>
