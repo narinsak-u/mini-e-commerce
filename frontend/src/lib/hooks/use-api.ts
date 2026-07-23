@@ -230,8 +230,13 @@ export function useCheckout() {
   return useMutation({
     mutationFn: () => api<{ id: string }>("/checkout", { method: "POST" }),
     onSuccess: () => {
+      toast.success("Order placed successfully");
       queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+    },
+    onError: (err: unknown) => {
+      const message = err instanceof ApiError ? err.message : "Checkout failed";
+      toast.error(message);
     },
   });
 }
@@ -328,9 +333,11 @@ export function useUpdateOrderStatus() {
   return useMutation({
     mutationFn: ({ orderId, status }: { orderId: string; status: string }) =>
       api(`/orders/${orderId}`, { method: "PATCH", body: JSON.stringify({ status }) }),
-    onSuccess: () => {
+    onSuccess: (_data, { status }) => {
+      toast.success(`Order status updated to ${status}`);
       queryClient.invalidateQueries({ queryKey: queryKeys.admin.orders });
     },
+    onError: () => toast.error("Failed to update order status"),
   });
 }
 
@@ -349,9 +356,14 @@ export function useSaveProduct() {
       }
       return api(`/products/${product.id}`, { method: "PATCH", body: JSON.stringify(product) });
     },
-    onSuccess: () => {
+    onSuccess: (_data, { isNew }) => {
+      toast.success(isNew ? "Product created" : "Product updated");
       queryClient.invalidateQueries({ queryKey: queryKeys.admin.products });
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+    },
+    onError: (err: unknown) => {
+      const message = err instanceof ApiError ? err.message : "Failed to save product";
+      toast.error(message);
     },
   });
 }

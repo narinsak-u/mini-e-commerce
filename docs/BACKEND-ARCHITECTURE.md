@@ -529,3 +529,251 @@ PostgreSQL tables defined in `src/infrastructure/database/drizzle/schema/`:
 5. **Dead letter queue** — every worker queue routes nacked messages to `shop.dead-letter` via `shop.dlx`. Failed messages don't get lost — they accumulate for inspection.
 
 6. **No DI container** — factory functions + manual wiring at route level. Keeps dependencies explicit, no magic, easy to debug. The "composition root" pattern is explicit in every route file.
+
+---
+
+## Inter-Service Communication Contracts
+
+### Event Payloads
+
+Every message flows through `shop.exchange` (topic). Producers call `publishEvent(routingKey, payload)` from `src/config/rabbitmq.ts`. Consumers parse the JSON buffer.
+
+#### `order.created`
+
+**Producer:** `createOrderUseCase` (application/orders/use-cases/create-order.ts)
+**Consumer:** Inventory consumer
+
+```ts
+{
+  orderId: string;        // UUID
+  userId: string;         // UUID
+  items: Array<{
+    productId: string;    // UUID
+    quantity: number;     // units ordered
+    price: number;        // unit price at time of order
+  }>;
+  totalAmount: number;    // cart total
+}
+```
+
+#### `inventory.reserved`
+
+**Producer:** Inventory consumer (infrastructure/rabbitmq/consumers/inventory-consumer.ts)
+**Consumer:** Payment consumer
+
+```ts
+{
+  orderId: string;        // UUID — only the orderId, items already deducted
+}
+```
+
+#### `inventory.failed`
+
+**Producer:** Would be emitted by inventory consumer on stock validation failure (currently nacks to DLQ instead)
+**Consumer:** Notification consumer (bound to this key)
+
+```ts
+{
+  orderId: string;
+  reason: string;         // e.g. "Insufficient stock for product xyz"
+}
+```
+
+#### `payment.completed`
+
+**Producer:** Payment consumer (infrastructure/rabbitmq/consumers/payment-consumer.ts)
+**Consumers:** Notification consumer, Analytics consumer
+
+```ts
+{
+  orderId: string;        // UUID
+  amount: number;         // payment amount (order total)
+}
+```
+
+#### `payment.failed`
+
+**Producer:** Payment consumer
+**Consumer:** Notification consumer (bound to this key, but currently only handles payment_success type)
+
+```ts
+{
+  orderId: string;        // UUID
+}
+```
+
+#### `order.shipped` / `order.completed`
+
+**Producer:** Would be emitted by order status update use case (currently only published as routing keys for notification binding)
+**Consumer:** Notification consumer
+
+```ts
+{
+  orderId: string;
+}
+```
+
+### HTTP Request/Response Contracts
+
+#### Auth
+
+| Endpoint | Request Body | Success Response | Error |
+|----------|-------------|-----------------|-------|
+| `POST /auth/register` | `{ name, email, password }` | `201 { user: { id, email, name, role }, accessToken, refreshToken }` | `400` duplicate email, validation |
+| `POST /auth/login` | `{ email, password }` | `200 { user: { id, email, name, role }, accessToken, refreshToken }` | `401` invalid credentials |
+| `POST /auth/refresh` | `{ refreshToken }` | `200 { accessToken, refreshToken }` | `401` invalid/expired token |
+| `POST /auth/logout` | `{ refreshToken }` | `200 { message }` | — |
+
+#### Products
+
+| Endpoint | Auth | Request | Success Response |
+|----------|------|---------|-----------------|
+| `GET /products` | No | Query: `page, limit, q, categoryId, sortBy, sortOrder` | `{ data: Product[], total, page, limit }` |
+| `GET /products/:id` | No | — | `ProductWithCategory` |
+| `POST /products` | Admin | `{ name, price, description?, stock?, categoryId?, imageUrl? }` | `201 Product` |
+| `PATCH /products/:id` | Admin | Partial product fields | `Product` |
+| `DELETE /products/:id` | Admin | — | `204` |
+
+#### Cart
+
+| Endpoint | Auth | Request | Success Response |
+|----------|------|---------|-----------------|
+| `GET /cart` | Yes | — | `{ items: CartItem[], total }` |
+| `POST /cart/items` | Yes | `{ productId, quantity }` | `{ items: CartItem[], total }` |
+| `PATCH /cart/items/:id` | Yes | `{ quantity }` | `{ items: CartItem[], total }` |
+| `DELETE /cart/items/:id` | Yes | — | `{ items: CartItem[], total }` |
+| `DELETE /cart` | Yes | — | `{ items: [], total: 0 }` |
+
+#### Checkout & Orders
+
+| Endpoint | Auth | Request | Success Response |
+|----------|------|---------|-----------------|
+| `POST /checkout` | Yes | — | `201 Order` (triggers event chain) |
+| `GET /orders` | Yes | Query: `page, limit` | `{ data: Order[], total, page, limit }` |
+| `GET /orders/:id` | Yes | — | `Order` |
+| `POST /orders/:id/cancel` | Yes | — | `Order` (only if status=pending) |
+| `PATCH /orders/:id` | Admin | `{ status }` | `Order` |
+
+#### Notifications
+
+| Endpoint | Auth | Success Response |
+|----------|------|-----------------|
+| `GET /notifications` | Yes | `{ data: Notification[], total }` |
+| `PATCH /notifications/:id/read` | Yes | `{ success: true }` |
+
+#### Admin
+
+| Endpoint | Auth | Success Response |
+|----------|------|-----------------|
+| `GET /admin/analytics` | Admin | `{ revenue, totalOrders, bestSellers, dailyRevenue }` |
+| `GET /admin/users` | Admin | `{ data: User[], total, page, limit }` |
+| `PATCH /admin/users/:id/role` | Admin | `User` |
+
+### Service Communication Diagram (all paths)
+
+```
+                         ┌──────────────┐
+                         │   Frontend   │
+                         │  (React/Vite)│
+                         └──────┬───────┘
+                                │ HTTP (JSON)
+                                ▼
+┌───────────────────────────────────────────────────────────┐
+│                     Express Server                         │
+│                                                            │
+│  ┌─────────┐   ┌──────────┐   ┌──────────┐   ┌────────┐  │
+│  │  Auth    │   │ Products │   │   Cart   │   │ Orders │  │
+│  │ Routes  │   │  Routes  │   │  Routes  │   │ Routes │  │
+│  └────┬────┘   └────┬─────┘   └────┬─────┘   └───┬────┘  │
+│       │              │              │              │        │
+│       ▼              ▼              ▼              ▼        │
+│  ┌─────────┐   ┌──────────┐   ┌──────────┐   ┌────────┐  │
+│  │  Auth   │   │ Product  │   │   Cart   │   │ Order  │  │
+│  │ UseCases│   │ UseCases │   │ UseCases │   │UseCases│  │
+│  └────┬────┘   └────┬─────┘   └────┬─────┘   └───┬────┘  │
+│       │              │              │              │        │
+│       ▼              ▼              ▼              ▼        │
+│  ┌─────────────────────────────────────────────────────┐  │
+│  │              Domain Interfaces                       │  │
+│  │  IUserRepo  IProductRepo  ICartRepo  IOrderRepo     │  │
+│  └──────────────────────┬──────────────────────────────┘  │
+│                         │                                  │
+│       ┌─────────────────┼──────────────────┐               │
+│       ▼                 ▼                  ▼               │
+│  ┌──────────┐   ┌──────────────┐   ┌────────────┐        │
+│  │PostgreSQL│   │    Redis     │   │  RabbitMQ  │        │
+│  │ (Drizzle)│   │(cache/cart/  │   │ (exchange) │        │
+│  │          │   │ analytics)   │   │            │        │
+│  └──────────┘   └──────────────┘   └─────┬──────┘        │
+└──────────────────────────────────────────┼─────────────────┘
+                                           │
+                    ┌──────────────────────┼──────────────────────┐
+                    │                      │                      │
+                    ▼                      ▼                      ▼
+            ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+            │  Inventory   │     │   Payment    │     │ Notification │
+            │  Consumer    │     │   Consumer   │     │   Consumer   │
+            │              │     │              │     │              │
+            │ Reads:       │     │ Reads:       │     │ Reads:       │
+            │  PostgreSQL  │     │  PostgreSQL  │     │  PostgreSQL  │
+            │              │     │              │     │              │
+            │ Writes:      │     │ Writes:      │     │ Writes:      │
+            │  PostgreSQL  │     │  PostgreSQL  │     │  PostgreSQL  │
+            │              │     │              │     │              │
+            │ Publishes:   │     │ Publishes:   │     │ Publishes:   │
+            │  inventory.  │     │  payment.    │     │  (none)      │
+            │  reserved    │     │  completed   │     │              │
+            │              │     │  payment.    │     │              │
+            │              │     │  failed      │     │              │
+            └──────────────┘     └──────────────┘     └──────────────┘
+                    │                    │
+                    │                    │  "payment.completed"
+                    │                    ├──────────────────────┐
+                    │                    │                      │
+                    │                    ▼                      ▼
+                    │           ┌──────────────┐     ┌──────────────┐
+                    │           │  Analytics   │     │ Notification │
+                    │           │  Consumer    │     │   Consumer   │
+                    │           │              │     │              │
+                    │           │ Reads:       │     │ (same queue  │
+                    │           │  PostgreSQL  │     │  as above)   │
+                    │           │              │     │              │
+                    │           │ Writes:      │     │              │
+                    │           │  Redis only  │     │              │
+                    │           └──────────────┘     └──────────────┘
+                    │
+                    │  "payment.failed"
+                    ▼
+            ┌──────────────┐
+            │  Inventory   │
+            │  Consumer    │
+            │  (release    │
+            │   stock)     │
+            └──────────────┘
+```
+
+### Data Flow per Checkout (step by step)
+
+| Step | Service | Action | Data Written | Data Read |
+|------|---------|--------|-------------|-----------|
+| 1 | Express | POST /checkout | orders + order_items (PG), clears cart:userId (Redis) | cart:userId (Redis) |
+| 2 | Express | Publish event | `order.created` → RabbitMQ | — |
+| 3 | Express | Return response | — | — |
+| 4 | Inventory Consumer | Consume `order.created` | products.stock (PG), inventory_logs (PG) | products (PG) |
+| 5 | Inventory Consumer | Publish event | `inventory.reserved` → RabbitMQ | — |
+| 6 | Payment Consumer | Consume `inventory.reserved` | payments (PG), orders.status (PG) | orders (PG) |
+| 7a | Payment Consumer | On success: publish | `payment.completed` → RabbitMQ | — |
+| 7b | Payment Consumer | On failure: publish | `payment.failed` → RabbitMQ, restore products.stock (PG) | — |
+| 8 | Notification Consumer | Consume `payment.completed` | notifications (PG) | orders (PG) |
+| 9 | Analytics Consumer | Consume `payment.completed` | Redis counters (revenue, orders, daily, best sellers) | orders (PG) |
+
+### Dead Letter Flow
+
+```
+Any consumer throws → nack(msg, false, false)
+    → message routed to shop.dlx (fanout exchange)
+    → lands in shop.dead-letter queue
+    → accumulates for manual inspection (no consumer on DLQ)
+```
+
+Messages in the DLQ can be inspected via RabbitMQ management UI (`http://localhost:15672`). No automatic retry — failures require manual investigation and re-publish.
